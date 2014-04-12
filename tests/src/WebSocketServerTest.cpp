@@ -35,25 +35,46 @@ void requestCallback(Server& server, const Server::client_request_t& req)
 {
     JsonRpc::Response response;
 
-    const std::string& method = req.second.getMethod();
+    const string& method = req.second.getMethod();
     const json_spirit::Array& params = req.second.getParams();
 
-    if (method == "add")
+    try
     {
-        response.setResult(method, req.second.getId());
+        if (params.size() != 2)
+        {
+            throw std::runtime_error("Invalid parameters.");
+        }
+
+        uint64_t x = params[0].get_uint64();
+        uint64_t y = params[1].get_uint64();
+        uint64_t z;
+
+        if (method == "add")
+        {
+            z = x + y;
+        }
+        else if (method == "subtract")
+        {
+            z = x - y;
+        }
+        else if (method == "multiply")
+        {
+            z = x * y;
+        }
+        else if (method == "divide")
+        {
+            z = x / y;
+        }
+        else
+        {
+            throw std::runtime_error("Invalid method.");
+        }
+
+        response.setResult(z, req.second.getId());
     }
-    else if (method == "subtract")
+    catch (const exception& e)
     {
-    }
-    else if (method == "multiply")
-    {
-    }
-    else if (method == "divide")
-    {
-    }
-    else
-    {
-        response.setError("Invalid method.", req.second.getId());
+        response.setError(e.what(), req.second.getId());
     }
 
     server.send(req.first, response);
