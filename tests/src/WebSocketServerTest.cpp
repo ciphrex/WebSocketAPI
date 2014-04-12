@@ -36,7 +36,7 @@ void requestCallback(Server& server, const Server::client_request_t& req)
     const std::string& method = req.second.getMethod();
 
     JsonRpc::Response res;
-    res.setResult(method);
+    res.setResult(method, req.second.getId());
     server.send(req.first, res);
 }
 
