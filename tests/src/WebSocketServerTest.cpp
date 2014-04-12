@@ -1,5 +1,8 @@
 #include <WebSocketServer.h>
 
+#include <thread>
+#include <chrono>
+
 #include <iostream>
 
 #include <signal.h>
@@ -102,7 +105,7 @@ int main()
         return 1;
     }
 
-    while (!g_bShutdown) { usleep(200); }
+    while (!g_bShutdown) { std::this_thread::sleep_for(std::chrono::microseconds(200)); }
 
     cout << "Stopping websocket server...";
     wsServer.stop();

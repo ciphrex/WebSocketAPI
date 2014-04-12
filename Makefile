@@ -27,6 +27,14 @@ else ifeq ($(OS), mingw64)
 
     ARCHIVER = x86_64-w64-mingw32-ar
 
+    BOOST_THREAD_SUFFIX = _win32
+    BOOST_SUFFIX = -mt-s
+
+    PLATFORM_LIBS += \
+        -static-libgcc -static-libstdc++ \
+        -lws2_32 \
+        -lmswsock
+
     EXE_EXT = .exe
 
 else ifeq ($(OS), osx)
@@ -44,21 +52,21 @@ else ifneq ($(MAKECMDGOALS), clean)
     $(error OS must be set to linux, mingw64, or osx)
 endif
 
-INCLUDE_PATH = \
+INCLUDE_PATH += \
     -Isrc
 
-LIB_PATH = \
+LIB_PATH += \
     -Llib
 
-OBJS = \
+OBJS += \
     obj/JsonRpc.o \
     obj/WebSocketServer.o
 
-LIBS = \
+LIBS += \
+    -lWebSocketServer \
     -lboost_system$(BOOST_SUFFIX) \
     -lboost_regex$(BOOST_SUFFIX) \
-    -lboost_thread$(BOOST_SUFFIX) \
-    -lWebSocketServer
+    -lboost_thread$(BOOST_THREAD_SUFFIX)$(BOOST_SUFFIX)
 
 all: lib tests
 
@@ -73,7 +81,7 @@ obj/%.o: src/%.cpp src/%.h
 tests: tests/build/WebSocketServerTest
 
 tests/build/WebSocketServerTest: tests/src/WebSocketServerTest.cpp lib/libWebSocketServer.a
-	$(CXX) $(CXXFLAGS) $(INCLUDE_PATH) $(LIB_PATH) $(LIBS) $< -o $@
+	$(CXX) $(CXXFLAGS) $(INCLUDE_PATH) $(LIB_PATH) $< -o $@ $(LIBS) $(PLATFORM_LIBS)
 
 clean:
 	-rm -f obj/*.o lib/*.a tests/build/WebSocketServerTest
