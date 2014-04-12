@@ -83,5 +83,10 @@ tests: tests/build/WebSocketServerTest
 tests/build/WebSocketServerTest: tests/src/WebSocketServerTest.cpp lib/libWebSocketServer.a
 	$(CXX) $(CXXFLAGS) $(INCLUDE_PATH) $(LIB_PATH) $< -o $@ $(LIBS) $(PLATFORM_LIBS)
 
+install:
+	-cp src/JsonRpc.h /usr/local/include/
+	-cp src/WebSocketServer.h /usr/local/include/
+	-cp lib/libWebSocketServer.a /usr/local/lib/
+	
 clean:
 	-rm -f obj/*.o lib/*.a tests/build/WebSocketServerTest
