@@ -33,7 +33,7 @@ obj/%.o: src/%.cpp src/%.h
 
 tests: tests/build/WebSocketServerTest
 
-tests/build/WebSocketServerTest: tests/src/WebSocketServerTest.cpp
+tests/build/WebSocketServerTest: tests/src/WebSocketServerTest.cpp lib/libWebSocketServer.a
 	$(CXX) $(CXXFLAGS) $(INCLUDE_PATH) $(LIB_PATH) $(LIBS) $< -o $@
 
 clean:

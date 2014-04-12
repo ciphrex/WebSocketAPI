@@ -33,11 +33,30 @@ void closeCallback(Server& server, websocketpp::connection_hdl hdl)
 
 void requestCallback(Server& server, const Server::client_request_t& req)
 {
-    const std::string& method = req.second.getMethod();
+    JsonRpc::Response response;
 
-    JsonRpc::Response res;
-    res.setResult(method, req.second.getId());
-    server.send(req.first, res);
+    const std::string& method = req.second.getMethod();
+    const json_spirit::Array& params = req.second.getParams();
+
+    if (method == "add")
+    {
+        response.setResult(method, req.second.getId());
+    }
+    else if (method == "subtract")
+    {
+    }
+    else if (method == "multiply")
+    {
+    }
+    else if (method == "divide")
+    {
+    }
+    else
+    {
+        response.setError("Invalid method.", req.second.getId());
+    }
+
+    server.send(req.first, response);
 }
 
 int main()

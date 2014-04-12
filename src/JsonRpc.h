@@ -23,7 +23,7 @@ class Request
 public:
     Request() { }
     Request(const Request& request) : m_method(request.m_method), m_params(request.m_params), m_id(request.m_id) { }
-    Request(const std::string& method, const json_spirit::Object& params, const json_spirit::Value& id = json_spirit::Value())
+    Request(const std::string& method, const json_spirit::Array& params, const json_spirit::Value& id = json_spirit::Value())
         : m_method(method), m_params(params), m_id(id) { }
     Request(const std::string& json) { setJson(json); }
 
@@ -31,12 +31,12 @@ public:
     std::string getJson() const;
 
     const std::string& getMethod() const { return m_method; }
-    const json_spirit::Value& getParams() const { return m_params; }
+    const json_spirit::Array& getParams() const { return m_params; }
     const json_spirit::Value& getId() const { return m_id; }
 
 private:
     std::string m_method;
-    json_spirit::Value m_params;
+    json_spirit::Array m_params;
     json_spirit::Value m_id;
 };
 
