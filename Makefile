@@ -9,6 +9,10 @@ ifndef OS
     endif
 endif
 
+ifndef SYSROOT
+    SYSROOT = /usr/local
+endif
+
 ifeq ($(OS), linux)
     CXX = g++
     CC = gcc
@@ -84,9 +88,14 @@ tests/build/WebSocketServerTest: tests/src/WebSocketServerTest.cpp lib/libWebSoc
 	$(CXX) $(CXXFLAGS) $(INCLUDE_PATH) $(LIB_PATH) $< -o $@ $(LIBS) $(PLATFORM_LIBS)
 
 install:
-	-cp src/JsonRpc.h /usr/local/include/
-	-cp src/WebSocketServer.h /usr/local/include/
-	-cp lib/libWebSocketServer.a /usr/local/lib/
+	-mkdir -p $(SYSROOT)/include/WebSocketServer
+	-cp src/JsonRpc.h $(SYSROOT)/include/WebSocketServer/
+	-cp src/WebSocketServer.h $(SYSROOT)/include/WebSocketServer/
+	-cp lib/libWebSocketServer.a $(SYSROOT)/lib/
+
+remove:
+	-rm -rf $(SYSROOT)/include/WebSocketServer
+	-rm $(SYSROOT)/lib/libWebSocketServer.a
 	
 clean:
 	-rm -f obj/*.o lib/*.a tests/build/WebSocketServerTest
