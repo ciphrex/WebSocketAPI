@@ -89,9 +89,9 @@ tests/build/WebSocketServerTest: tests/src/WebSocketServerTest.cpp lib/libWebSoc
 
 install:
 	-mkdir -p $(SYSROOT)/include/WebSocketServer
-	-cp src/JsonRpc.h $(SYSROOT)/include/WebSocketServer/
-	-cp src/WebSocketServer.h $(SYSROOT)/include/WebSocketServer/
-	-cp lib/libWebSocketServer.a $(SYSROOT)/lib/
+	-rsync -u src/JsonRpc.h $(SYSROOT)/include/WebSocketServer/
+	-rsync -u src/WebSocketServer.h $(SYSROOT)/include/WebSocketServer/
+	-rsync -u lib/libWebSocketServer.a $(SYSROOT)/lib/
 
 remove:
 	-rm -rf $(SYSROOT)/include/WebSocketServer
