@@ -39,8 +39,14 @@ public:
 
     void start();
     void stop();
+
+    // Send formatted JSON
     void send(websocketpp::connection_hdl hdl, const JsonRpc::Response& res);
     void sendAll(const JsonRpc::Response& res);
+
+    // Send raw text
+    void send(websocketpp::connection_hdl hdl, const std::string& data);
+    void sendAll(const std::string& data);
 
     void setOpenCallback(open_callback_t callback) { m_openCallback = callback; }
     void setCloseCallback(close_callback_t callback) { m_closeCallback = callback; }

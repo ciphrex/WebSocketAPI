@@ -174,3 +174,19 @@ void Server::sendAll(const JsonRpc::Response& res)
         m_ws_server.send(hdl, res.getJson(), websocketpp::frame::opcode::text);
     }
 }
+
+void Server::send(websocketpp::connection_hdl hdl, const std::string& data)
+{
+    boost::unique_lock<boost::mutex> lock(m_connectionMutex);
+    if (m_connections.count(hdl) == 0) return;
+    m_ws_server.send(hdl, data, websocketpp::frame::opcode::text);
+}
+
+void Server::sendAll(const std::string& data)
+{
+    boost::unique_lock<boost::mutex> lock(m_connectionMutex);
+    for (auto& hdl: m_connections)
+    {
+        m_ws_server.send(hdl, data, websocketpp::frame::opcode::text);
+    }
+}
