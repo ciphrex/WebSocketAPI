@@ -39,7 +39,8 @@ public:
 
     void start();
     void stop();
-    void send(websocketpp::connection_hdl hdl, const JsonRpc::Response& res) { m_ws_server.send(hdl, res.getJson(), websocketpp::frame::opcode::text); }
+    void send(websocketpp::connection_hdl hdl, const JsonRpc::Response& res);
+    void sendAll(const JsonRpc::Response& res);
 
     void setOpenCallback(open_callback_t callback) { m_openCallback = callback; }
     void setCloseCallback(close_callback_t callback) { m_closeCallback = callback; }
@@ -64,9 +65,6 @@ private:
 
     boost::mutex m_requestMutex;
     boost::condition_variable m_requestCond;
-
-    boost::mutex m_responseMutex;
-    boost::condition_variable m_responseCond;
 
     boost::mutex m_connectionMutex;
 

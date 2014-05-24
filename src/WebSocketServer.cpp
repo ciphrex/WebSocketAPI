@@ -32,15 +32,21 @@ bool Server::onValidate(websocketpp::connection_hdl hdl)
 void Server::onOpen(websocketpp::connection_hdl hdl)
 {
     std::cout << "Server::onOpen() called with hdl: " << hdl.lock().get() << std::endl;
+    {
+        boost::unique_lock<boost::mutex> lock(m_connectionMutex);
+        m_connections.insert(hdl);
+    }
     if (m_openCallback) { m_openCallback(*this, hdl); }
 }
 
 void Server::onClose(websocketpp::connection_hdl hdl)
 {
     std::cout << "Server::onClose() called with hdl: " << hdl.lock().get() << std::endl;
+    {
+        boost::unique_lock<boost::mutex> lock(m_connectionMutex);
+        m_connections.erase(hdl);
+    }
     if (m_closeCallback) { m_closeCallback(*this, hdl); }
-    //boost::unique_lock<boost::mutex> lock(m_connectionMutex);
-    //m_subscribers.erase(hdl);
 }
 
 void Server::onMessage(websocketpp::connection_hdl hdl, ws_server_t::message_ptr msg)
@@ -153,3 +159,18 @@ void Server::stop()
     std::cout << "Done." << std::endl;
 }
 
+void Server::send(websocketpp::connection_hdl hdl, const JsonRpc::Response& res)
+{
+    boost::unique_lock<boost::mutex> lock(m_connectionMutex);
+    if (m_connections.count(hdl) == 0) return;
+    m_ws_server.send(hdl, res.getJson(), websocketpp::frame::opcode::text);
+}
+
+void Server::sendAll(const JsonRpc::Response& res)
+{
+    boost::unique_lock<boost::mutex> lock(m_connectionMutex);
+    for (auto& hdl: m_connections)
+    {
+        m_ws_server.send(hdl, res.getJson(), websocketpp::frame::opcode::text);
+    }
+}
