@@ -10,7 +10,7 @@
 using namespace WebSocket;
 using namespace std;
 
-const string WS_PORT = "12345";
+const string WS_PORT = "12346";
 
 bool g_bShutdown = false;
 
@@ -18,6 +18,11 @@ void finish(int sig)
 {
     cout << "Stopping..." << endl;
     g_bShutdown = true;
+}
+
+std::string getPassword()
+{
+    return "test";
 }
 
 void openCallback(ServerTls& server, websocketpp::connection_hdl hdl)
@@ -45,7 +50,7 @@ ServerTls::context_ptr tlsInitCallback(ServerTls& server, websocketpp::connectio
         ctx->set_options(boost::asio::ssl::context::default_workarounds |
                          boost::asio::ssl::context::no_sslv2 |
                          boost::asio::ssl::context::single_dh_use);
-        //ctx->set_password_callback(bind(&get_password));
+        ctx->set_password_callback(bind(&getPassword));
         ctx->use_certificate_chain_file("server.pem");
         ctx->use_private_key_file("server.pem", boost::asio::ssl::context::pem);
     }
