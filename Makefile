@@ -64,7 +64,8 @@ LIB_PATH += \
 
 OBJS += \
     obj/JsonRpc.o \
-    obj/WebSocketServer.o
+    obj/WebSocketServer.o \
+    obj/WebSocketServerTls.o
 
 LIBS += \
     -lWebSocketServer \
@@ -91,6 +92,7 @@ install:
 	-mkdir -p $(SYSROOT)/include/WebSocketServer
 	-rsync -u src/JsonRpc.h $(SYSROOT)/include/WebSocketServer/
 	-rsync -u src/WebSocketServer.h $(SYSROOT)/include/WebSocketServer/
+	-rsync -u src/WebSocketServerTls.h $(SYSROOT)/include/WebSocketServer/
 	-rsync -u lib/libWebSocketServer.a $(SYSROOT)/lib/
 
 remove:
