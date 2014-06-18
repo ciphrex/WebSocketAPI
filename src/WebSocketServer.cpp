@@ -159,6 +159,12 @@ void Server::stop()
     std::cout << "Done." << std::endl;
 }
 
+std::string Server::getRemoteEndpoint(websocketpp::connection_hdl hdl)
+{
+    ws_server_t::connection_ptr con = m_ws_server.get_con_from_hdl(hdl);
+    return boost::lexical_cast<std::string>(con->get_remote_endpoint());
+}
+
 void Server::send(websocketpp::connection_hdl hdl, const JsonRpc::Response& res)
 {
     boost::unique_lock<boost::mutex> lock(m_connectionMutex);
