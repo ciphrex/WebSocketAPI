@@ -83,10 +83,13 @@ lib/libWebSocketServer.a: $(OBJS)
 obj/%.o: src/%.cpp src/%.h
 	$(CXX) $(CXXFLAGS) $(INCLUDE_PATH) -c $< -o $@
 
-tests: tests/build/WebSocketServerTest
+tests: tests/build/WebSocketServerTest tests/build/WebSocketServerTlsTest
 
 tests/build/WebSocketServerTest: tests/src/WebSocketServerTest.cpp lib/libWebSocketServer.a
 	$(CXX) $(CXXFLAGS) $(INCLUDE_PATH) $(LIB_PATH) $< -o $@ $(LIBS) $(PLATFORM_LIBS)
+
+tests/build/WebSocketServerTlsTest: tests/src/WebSocketServerTlsTest.cpp lib/libWebSocketServer.a
+	$(CXX) $(CXXFLAGS) $(INCLUDE_PATH) $(LIB_PATH) $< -o $@ -lcrypto -lssl $(LIBS) $(PLATFORM_LIBS)
 
 install:
 	-mkdir -p $(SYSROOT)/include/WebSocketServer
@@ -100,4 +103,4 @@ remove:
 	-rm $(SYSROOT)/lib/libWebSocketServer.a
 	
 clean:
-	-rm -f obj/*.o lib/*.a tests/build/WebSocketServerTest
+	-rm -f obj/*.o lib/*.a tests/build/WebSocketServerTest tests/build/WebSocketServerTlsTest
