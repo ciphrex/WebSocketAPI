@@ -7,6 +7,7 @@
 // All Rights Reserved.
 
 #include "JsonRpc.h"
+#include "JsonExceptions.h"
 
 using namespace JsonRpc;
 using namespace json_spirit;
@@ -17,14 +18,14 @@ void Request::setJson(const std::string& json)
     read_string(json, value);
     if (value.type() != obj_type)
     {
-        throw std::runtime_error("Invalid JSON.");
+        throw JsonInvalidException(json);
     }
 
     const Object& obj = value.get_obj();
     const Value& method = find_value(obj, "method");
     if (method.type() != str_type)
     {
-        throw std::runtime_error("Missing method.");
+        throw JsonMissingMethodException(json);
     }
 
     const Value& params = find_value(obj, "params");
@@ -34,7 +35,7 @@ void Request::setJson(const std::string& json)
     }
     else if (params.type() != array_type)
     {
-        throw std::runtime_error("Invalid parameter format.");
+        throw JsonInvalidParameterFormatException(json);
     }
     else
     {
@@ -61,7 +62,7 @@ void Response::setJson(const std::string& json)
     Value value;
     read_string(json, value);
     if (value.type() != obj_type) {
-        throw std::runtime_error("Invalid JSON.");
+        throw JsonInvalidException(json);
     }
     const Object& obj = value.get_obj();
     m_result = find_value(obj, "result");
