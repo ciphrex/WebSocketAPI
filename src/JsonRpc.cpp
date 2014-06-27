@@ -9,29 +9,30 @@
 #include "JsonRpc.h"
 
 using namespace JsonRpc;
+using namespace json_spirit;
 
 void Request::setJson(const std::string& json)
 {
-    json_spirit::Value value;
-    json_spirit::read_string(json, value);
-    if (value.type() != json_spirit::obj_type)
+    Value value;
+    read_string(json, value);
+    if (value.type() != obj_type)
     {
         throw std::runtime_error("Invalid JSON.");
     }
 
-    const json_spirit::Object& obj = value.get_obj();
-    const json_spirit::Value& method = json_spirit::find_value(obj, "method");
-    if (method.type() != json_spirit::str_type)
+    const Object& obj = value.get_obj();
+    const Value& method = find_value(obj, "method");
+    if (method.type() != str_type)
     {
         throw std::runtime_error("Missing method.");
     }
 
-    const json_spirit::Value& params = json_spirit::find_value(obj, "params");
+    const Value& params = find_value(obj, "params");
     if (params.is_null())
     {
-        m_params = json_spirit::Array();
+        m_params = Array();
     }
-    else if (params.type() != json_spirit::array_type)
+    else if (params.type() != array_type)
     {
         throw std::runtime_error("Invalid parameter format.");
     }
@@ -41,53 +42,78 @@ void Request::setJson(const std::string& json)
     }
 
     m_method = method.get_str();
-    m_id = json_spirit::find_value(obj, "id");
+    m_id = find_value(obj, "id");
 }
 
 std::string Request::getJson() const
 {
-    json_spirit::Object req;
-    req.push_back(json_spirit::Pair("method", m_method));
-    req.push_back(json_spirit::Pair("params", m_params));
-    req.push_back(json_spirit::Pair("id", m_id));
-    return json_spirit::write_string<json_spirit::Value>(req);
+    Object req;
+    req.push_back(Pair("method", m_method));
+    req.push_back(Pair("params", m_params));
+    req.push_back(Pair("id", m_id));
+    return write_string<Value>(req);
 }
 
 
 
 void Response::setJson(const std::string& json)
 {
-    json_spirit::Value value;
-    json_spirit::read_string(json, value);
-    if (value.type() != json_spirit::obj_type) {
+    Value value;
+    read_string(json, value);
+    if (value.type() != obj_type) {
         throw std::runtime_error("Invalid JSON.");
     }
-    const json_spirit::Object& obj = value.get_obj();
-    m_result = json_spirit::find_value(obj, "result");
-    m_error = json_spirit::find_value(obj, "error");
-    m_id = json_spirit::find_value(obj, "id");
+    const Object& obj = value.get_obj();
+    m_result = find_value(obj, "result");
+    m_error = find_value(obj, "error");
+    m_id = find_value(obj, "id");
 }
 
 std::string Response::getJson() const
 {
-    json_spirit::Object res;
-    res.push_back(json_spirit::Pair("result", m_result));
-    res.push_back(json_spirit::Pair("error", m_error));
-    res.push_back(json_spirit::Pair("id", m_id));
-    return json_spirit::write_string<json_spirit::Value>(res);
+    Object res;
+    res.push_back(Pair("result", m_result));
+    res.push_back(Pair("error", m_error));
+    res.push_back(Pair("id", m_id));
+    return write_string<Value>(res);
 }
 
-void Response::setResult(const json_spirit::Value& result, const json_spirit::Value& id)
+void Response::setResult(const Value& result, const Value& id)
 {
     m_result = result;
-    m_error = json_spirit::Value();
+    m_error = Value();
     m_id = id;
 }
 
-void Response::setError(const json_spirit::Value& error, const json_spirit::Value& id)
+void Response::setError(const Value& error, const Value& id)
 {
-    m_result = json_spirit::Value();
+    m_result = Value();
     m_error = error;
+    m_id = id;
+}
+
+void Response::setError(const std::exception& e, const Value& id)
+{
+    m_result = Value();
+
+    Object error;
+    error.push_back(Pair("message", e.what()));
+    error.push_back(Pair("code", Value()));    
+    m_error = error;
+
+    m_id = id;
+}
+
+void Response::setError(const stdutils::custom_error& e, const Value& id)
+{
+    m_result = Value();
+
+    Object error;
+    error.push_back(Pair("message", e.what()));
+    if (e.has_code())   { error.push_back(Pair("code", e.code())); }
+    else                { error.push_back(Pair("code", Value()));  }
+    m_error = error;
+
     m_id = id;
 }
 

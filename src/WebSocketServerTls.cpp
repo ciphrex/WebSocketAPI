@@ -71,9 +71,14 @@ void ServerTls::onMessage(websocketpp::connection_hdl hdl, ws_server_t::message_
         lock.unlock();
         m_requestCond.notify_one();
     }
+    catch (const stdutils::custom_error& e) {
+        JsonRpc::Response response;
+        response.setError(e);
+        m_ws_server.send(hdl, response.getJson(), msg->get_opcode());
+    }
     catch (const std::exception& e) {
         JsonRpc::Response response;
-        response.setError(e.what());
+        response.setError(e);
         m_ws_server.send(hdl, response.getJson(), msg->get_opcode());
     }
 }

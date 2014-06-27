@@ -8,11 +8,12 @@
 
 #pragma once
 
+#include <stdutils/customerror.h>
+
 #include <json_spirit/json_spirit_reader_template.h>
 #include <json_spirit/json_spirit_writer_template.h>
 #include <json_spirit/json_spirit_utils.h>
 
-#include <stdexcept>
 #include <sstream>
 #include <string>
 
@@ -55,6 +56,8 @@ public:
 
     void setResult(const json_spirit::Value& result, const json_spirit::Value& id = json_spirit::Value());
     void setError(const json_spirit::Value& error, const json_spirit::Value& id = json_spirit::Value());
+    void setError(const std::exception& e, const json_spirit::Value& id = json_spirit::Value());
+    void setError(const stdutils::custom_error& e, const json_spirit::Value& id = json_spirit::Value());
 
     const json_spirit::Value& getResult() const { return m_result; }
     const json_spirit::Value& getError() const { return m_error; }
