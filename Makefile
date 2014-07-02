@@ -63,9 +63,7 @@ LIB_PATH += \
     -Llib
 
 OBJS += \
-    obj/JsonRpc.o \
-    obj/WebSocketServer.o \
-    obj/WebSocketServerTls.o
+    obj/JsonRpc.o
 
 LIBS += \
     -lWebSocketServer \
@@ -77,8 +75,14 @@ all: lib tests
 
 lib: lib/libWebSocketServer.a
 
-lib/libWebSocketServer.a: $(OBJS)
+lib/libWebSocketServer.a: $(OBJS) obj/WebSocketServer.o obj/WebSocketServerTls.o
 	$(ARCHIVER) rcs $@ $^
+
+obj/WebSocketServer.o: src/WebSocketServer.cpp src/WebSocketServer.h
+	$(CXX) $(CXXFLAGS) $(INCLUDE_PATH) -c $< -o $@
+
+obj/WebSocketServerTls.o: src/WebSocketServer.cpp src/WebSocketServer.h
+	$(CXX) -DUSE_TLS $(CXXFLAGS) $(INCLUDE_PATH) -c $< -o $@
 
 obj/%.o: src/%.cpp src/%.h
 	$(CXX) $(CXXFLAGS) $(INCLUDE_PATH) -c $< -o $@

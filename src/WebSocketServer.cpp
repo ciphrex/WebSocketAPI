@@ -2,7 +2,7 @@
 //
 // WebSocketServer.cpp
 //
-// Copyright (c) 2013 Eric Lombrozo
+// Copyright (c) 2013-2014 Eric Lombrozo
 //
 // All Rights Reserved.
 
@@ -13,23 +13,32 @@
 
 using namespace WebSocket;
 
+#if defined(USE_TLS)
+bool ServerTls::onValidate(websocketpp::connection_hdl hdl)
+#else
 bool Server::onValidate(websocketpp::connection_hdl hdl)
+#endif
 {
     std::cout << "Server::onValidate()" << std::endl;
     ws_server_t::connection_ptr con = m_ws_server.get_con_from_hdl(hdl);
     std::string remote_endpoint = boost::lexical_cast<std::string>(con->get_remote_endpoint());
     std::cout << "Remote endpoint: " << remote_endpoint << std::endl;
     if (boost::regex_match(remote_endpoint, m_allow_ips_regex)) {
-        std::cout << "Validation successful." << std::endl;
+        std::cout << "IP validation successful." << std::endl;
+        if (m_validateCallback) { return m_validateCallback(*this, hdl); }
         return true;
     }
     else {
-        std::cout << "Validation failed." << std::endl;
+        std::cout << "IP Validation failed." << std::endl;
         return false;
     }
 }
 
+#if defined(USE_TLS)
+void ServerTls::onOpen(websocketpp::connection_hdl hdl)
+#else
 void Server::onOpen(websocketpp::connection_hdl hdl)
+#endif
 {
     std::cout << "Server::onOpen() called with hdl: " << hdl.lock().get() << std::endl;
     {
@@ -39,7 +48,11 @@ void Server::onOpen(websocketpp::connection_hdl hdl)
     if (m_openCallback) { m_openCallback(*this, hdl); }
 }
 
+#if defined(USE_TLS)
+void ServerTls::onClose(websocketpp::connection_hdl hdl)
+#else
 void Server::onClose(websocketpp::connection_hdl hdl)
+#endif
 {
     std::cout << "Server::onClose() called with hdl: " << hdl.lock().get() << std::endl;
     {
@@ -49,7 +62,11 @@ void Server::onClose(websocketpp::connection_hdl hdl)
     if (m_closeCallback) { m_closeCallback(*this, hdl); }
 }
 
+#if defined(USE_TLS)
+void ServerTls::onMessage(websocketpp::connection_hdl hdl, ws_server_t::message_ptr msg)
+#else
 void Server::onMessage(websocketpp::connection_hdl hdl, ws_server_t::message_ptr msg)
+#endif
 {
     std::cout << "Server::onMessage() called with hdl: " << hdl.lock().get()
               << " and message: " << msg->get_payload()
@@ -76,7 +93,20 @@ void Server::onMessage(websocketpp::connection_hdl hdl, ws_server_t::message_ptr
     }
 }
 
+#if defined(USE_TLS)
+ServerTls::context_ptr ServerTls::onTlsInit(websocketpp::connection_hdl hdl)
+{
+    std::cout << "ServerTls::onTlsInit() called with hdl: " << hdl.lock().get() << std::endl;
+    if (m_tlsInitCallback) { return m_tlsInitCallback(*this, hdl); }
+    return context_ptr();
+}
+#endif
+
+#if defined(USE_TLS)
+void ServerTls::requestLoop()
+#else
 void Server::requestLoop()
+#endif
 {
     while (true) {
         boost::unique_lock<boost::mutex> lock(m_requestMutex);
@@ -106,7 +136,11 @@ void Server::requestLoop()
     }
 }
 
+#if defined(USE_TLS)
+void ServerTls::init(int port, const std::string& allow_ips)
+#else
 void Server::init(int port, const std::string& allow_ips)
+#endif
 {
     m_port = port;
     m_bRunning = false;
@@ -125,13 +159,20 @@ void Server::init(int port, const std::string& allow_ips)
 
     m_ws_server.init_asio();
 
-    m_ws_server.set_validate_handler(websocketpp::lib::bind(&Server::onValidate, this, websocketpp::lib::placeholders::_1));
-    m_ws_server.set_open_handler(websocketpp::lib::bind(&Server::onOpen, this, websocketpp::lib::placeholders::_1));
-    m_ws_server.set_close_handler(websocketpp::lib::bind(&Server::onClose, this, websocketpp::lib::placeholders::_1));
-    m_ws_server.set_message_handler(websocketpp::lib::bind(&Server::onMessage, this, websocketpp::lib::placeholders::_1, websocketpp::lib::placeholders::_2));
+    m_ws_server.set_validate_handler(websocketpp::lib::bind(&ServerType::onValidate, this, websocketpp::lib::placeholders::_1));
+    m_ws_server.set_open_handler(websocketpp::lib::bind(&ServerType::onOpen, this, websocketpp::lib::placeholders::_1));
+    m_ws_server.set_close_handler(websocketpp::lib::bind(&ServerType::onClose, this, websocketpp::lib::placeholders::_1));
+    m_ws_server.set_message_handler(websocketpp::lib::bind(&ServerType::onMessage, this, websocketpp::lib::placeholders::_1, websocketpp::lib::placeholders::_2));
+#if defined(USE_TLS)
+    m_ws_server.set_tls_init_handler(websocketpp::lib::bind(&ServerType::onTlsInit, this, websocketpp::lib::placeholders::_1));
+#endif
 }
 
+#if defined(USE_TLS)
+void ServerTls::start()
+#else
 void Server::start()
+#endif
 {
     boost::unique_lock<boost::mutex> lock(m_startMutex);
     if (m_bRunning) {
@@ -143,11 +184,15 @@ void Server::start()
     m_ws_server.listen(m_port);
     m_ws_server.start_accept();
 
-    m_request_loop_thread   = boost::thread(websocketpp::lib::bind(&Server::requestLoop, this));
+    m_request_loop_thread   = boost::thread(websocketpp::lib::bind(&ServerType::requestLoop, this));
     m_io_service_thread     = boost::thread(websocketpp::lib::bind(&ws_server_t::run, &m_ws_server));
 }
 
+#if defined(USE_TLS)
+void ServerTls::stop()
+#else
 void Server::stop()
+#endif
 {
     boost::unique_lock<boost::mutex> lock(m_startMutex);
     m_bRunning = false;
@@ -164,20 +209,32 @@ void Server::stop()
     std::cout << "Done." << std::endl;
 }
 
+#if defined(USE_TLS)
+std::string ServerTls::getRemoteEndpoint(websocketpp::connection_hdl hdl)
+#else
 std::string Server::getRemoteEndpoint(websocketpp::connection_hdl hdl)
+#endif
 {
     ws_server_t::connection_ptr con = m_ws_server.get_con_from_hdl(hdl);
     return boost::lexical_cast<std::string>(con->get_remote_endpoint());
 }
 
+#if defined(USE_TLS)
+void ServerTls::send(websocketpp::connection_hdl hdl, const JsonRpc::Response& res)
+#else
 void Server::send(websocketpp::connection_hdl hdl, const JsonRpc::Response& res)
+#endif
 {
     boost::unique_lock<boost::mutex> lock(m_connectionMutex);
     if (m_connections.count(hdl) == 0) return;
     m_ws_server.send(hdl, res.getJson(), websocketpp::frame::opcode::text);
 }
 
+#if defined(USE_TLS)
+void ServerTls::sendAll(const JsonRpc::Response& res)
+#else
 void Server::sendAll(const JsonRpc::Response& res)
+#endif
 {
     boost::unique_lock<boost::mutex> lock(m_connectionMutex);
     for (auto& hdl: m_connections)
@@ -186,14 +243,22 @@ void Server::sendAll(const JsonRpc::Response& res)
     }
 }
 
+#if defined(USE_TLS)
+void ServerTls::send(websocketpp::connection_hdl hdl, const std::string& data)
+#else
 void Server::send(websocketpp::connection_hdl hdl, const std::string& data)
+#endif
 {
     boost::unique_lock<boost::mutex> lock(m_connectionMutex);
     if (m_connections.count(hdl) == 0) return;
     m_ws_server.send(hdl, data, websocketpp::frame::opcode::text);
 }
 
+#if defined(USE_TLS)
+void ServerTls::sendAll(const std::string& data)
+#else
 void Server::sendAll(const std::string& data)
+#endif
 {
     boost::unique_lock<boost::mutex> lock(m_connectionMutex);
     for (auto& hdl: m_connections)
