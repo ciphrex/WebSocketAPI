@@ -68,6 +68,7 @@ public:
     void stop();
 
     std::string getRemoteEndpoint(websocketpp::connection_hdl hdl);
+    std::string getResource(websocketpp::connection_hdl hdl);
 
     // Send formatted JSON
     void send(websocketpp::connection_hdl hdl, const JsonRpc::Response& res);

@@ -220,6 +220,16 @@ std::string Server::getRemoteEndpoint(websocketpp::connection_hdl hdl)
 }
 
 #if defined(USE_TLS)
+std::string ServerTls::getResource(websocketpp::connection_hdl hdl)
+#else
+std::string Server::getResource(websocketpp::connection_hdl hdl)
+#endif
+{
+    ws_server_t::connection_ptr con = m_ws_server.get_con_from_hdl(hdl);
+    return boost::lexical_cast<std::string>(con->get_resource());
+}
+
+#if defined(USE_TLS)
 void ServerTls::send(websocketpp::connection_hdl hdl, const JsonRpc::Response& res)
 #else
 void Server::send(websocketpp::connection_hdl hdl, const JsonRpc::Response& res)
