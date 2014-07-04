@@ -235,7 +235,9 @@ void ServerTls::send(websocketpp::connection_hdl hdl, const JsonRpc::Response& r
 void Server::send(websocketpp::connection_hdl hdl, const JsonRpc::Response& res)
 #endif
 {
+    if (!m_bRunning) return;
     boost::unique_lock<boost::mutex> lock(m_connectionMutex);
+    if (!m_bRunning) return;
     if (m_connections.count(hdl) == 0) return;
     m_ws_server.send(hdl, res.getJson(), websocketpp::frame::opcode::text);
 }
@@ -246,7 +248,9 @@ void ServerTls::sendAll(const JsonRpc::Response& res)
 void Server::sendAll(const JsonRpc::Response& res)
 #endif
 {
+    if (!m_bRunning) return;
     boost::unique_lock<boost::mutex> lock(m_connectionMutex);
+    if (!m_bRunning) return;
     for (auto& hdl: m_connections)
     {
         m_ws_server.send(hdl, res.getJson(), websocketpp::frame::opcode::text);
@@ -259,7 +263,9 @@ void ServerTls::send(websocketpp::connection_hdl hdl, const std::string& data)
 void Server::send(websocketpp::connection_hdl hdl, const std::string& data)
 #endif
 {
+    if (!m_bRunning) return;
     boost::unique_lock<boost::mutex> lock(m_connectionMutex);
+    if (!m_bRunning) return;
     if (m_connections.count(hdl) == 0) return;
     m_ws_server.send(hdl, data, websocketpp::frame::opcode::text);
 }
@@ -270,7 +276,9 @@ void ServerTls::sendAll(const std::string& data)
 void Server::sendAll(const std::string& data)
 #endif
 {
+    if (!m_bRunning) return;
     boost::unique_lock<boost::mutex> lock(m_connectionMutex);
+    if (!m_bRunning) return;
     for (auto& hdl: m_connections)
     {
         m_ws_server.send(hdl, data, websocketpp::frame::opcode::text);

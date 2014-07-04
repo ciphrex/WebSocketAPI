@@ -66,6 +66,7 @@ public:
 
     void start();
     void stop();
+    bool isRunning() const { return m_bRunning; }
 
     std::string getRemoteEndpoint(websocketpp::connection_hdl hdl);
     std::string getResource(websocketpp::connection_hdl hdl);
