@@ -16,10 +16,13 @@ using namespace json_spirit;
 using namespace WebSocket;
 
 /// Public Methods
-WebSocketClient::WebSocketClient()
+WebSocketClient::WebSocketClient(const string& event_field, const string& data_field)
 {
     bConnected = false;
     sequence = 0;
+
+    this->event_field = event_field;
+    this->data_field = data_field;
 
     client.set_access_channels(websocketpp::log::alevel::all);
     client.set_error_channels(websocketpp::log::elevel::all);
@@ -145,14 +148,21 @@ void WebSocketClient::onMessage(connection_hdl_t hdl, message_ptr_t msg)
             return;
         }
 
-        const Value& event = find_value(obj, "event");
+        const Value& event = find_value(obj, event_field);
         if (event.type() == str_type)
         {
             auto it = event_handler_map.find(event.get_str());
             if (it != event_handler_map.end())
             {
-                const Value& data = find_value(obj, "data");
-                it->second(data);
+                if (!data_field.empty())
+                {
+                    const Value& data = find_value(obj, data_field);
+                    it->second(data);
+                }
+                else
+                {
+                    it->second(obj);
+                }
             }
             return;
         }

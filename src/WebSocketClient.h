@@ -44,7 +44,7 @@ class WebSocketClient
 {
 public:
     // Constructor / Destructor
-    WebSocketClient();
+    WebSocketClient(const std::string& event_field, const std::string& data_field = "");
     ~WebSocketClient();
 
     // start() blocks until disconnection occurs.
@@ -80,6 +80,8 @@ private:
     LogHandler          on_log;
     ErrorHandler        on_error;
 
+    std::string         event_field;
+    std::string         data_field;
     EventHandlerMap     event_handler_map;
 
     uint64_t            sequence;
