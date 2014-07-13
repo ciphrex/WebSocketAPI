@@ -71,9 +71,12 @@ LIBS += \
     -lboost_regex$(BOOST_SUFFIX) \
     -lboost_thread$(BOOST_THREAD_SUFFIX)$(BOOST_SUFFIX)
 
-all: lib tests
+all: libs tests
 
-lib: lib/libWebSocketServer.a
+libs: server client
+
+# Server
+server: lib/libWebSocketServer.a
 
 lib/libWebSocketServer.a: $(OBJS) obj/WebSocketServer.o obj/WebSocketServerTls.o
 	$(ARCHIVER) rcs $@ $^
@@ -84,9 +87,19 @@ obj/WebSocketServer.o: src/WebSocketServer.cpp src/WebSocketServer.h
 obj/WebSocketServerTls.o: src/WebSocketServer.cpp src/WebSocketServer.h
 	$(CXX) -DUSE_TLS $(CXXFLAGS) $(INCLUDE_PATH) -c $< -o $@
 
+# Client
+client: lib/libWebSocketClient.a
+
+lib/libWebSocketClient.a: $(OBJS) obj/WebSocketClient.o
+	$(ARCHIVER) rcs $@ $^
+
+obj/WebSocketClient.o: src/WebSocketClient.cpp src/WebSocketClient.h
+	$(CXX) $(CXXFLAGS) $(INCLUDE_PATH) -c $< -o $@
+
 obj/%.o: src/%.cpp src/%.h
 	$(CXX) $(CXXFLAGS) $(INCLUDE_PATH) -c $< -o $@
 
+# Tests
 tests: tests/build/WebSocketServerTest tests/build/WebSocketServerTlsTest
 
 tests/build/WebSocketServerTest: tests/src/WebSocketServerTest.cpp lib/libWebSocketServer.a
