@@ -62,12 +62,15 @@ INCLUDE_PATH += \
 LIB_PATH += \
     -Llib
 
+# libboost_regex is needed by server
+# libboost_random is needed by client
 LIBS += \
     -lWebSocketServer \
     -lWebSocketClient \
     -lJsonRpc \
     -lboost_system$(BOOST_SUFFIX) \
     -lboost_regex$(BOOST_SUFFIX) \
+    -lboost_random$(BOOST_SUFFIX) \
     -lboost_thread$(BOOST_THREAD_SUFFIX)$(BOOST_SUFFIX)
 
 all: libs tests
@@ -104,14 +107,22 @@ lib/libWebSocketClient.a: obj/WebSocketClient.o
 obj/WebSocketClient.o: src/WebSocketClient.cpp src/WebSocketClient.h
 	$(CXX) $(CXXFLAGS) $(INCLUDE_PATH) -c $< -o $@
 
-# Tests
-tests: tests/build/WebSocketServerTest tests/build/WebSocketServerTlsTest
+tests: server_tests client_tests
 
-tests/build/WebSocketServerTest: tests/src/WebSocketServerTest.cpp lib/libWebSocketServer.a lib/libJsonRpc.a
+# Server Tests
+server_tests: tests/build/WebSocketServerTest$(EXE_EXT) tests/build/WebSocketServerTlsTest$(EXE_EXT)
+
+tests/build/WebSocketServerTest$(EXE_EXT): tests/src/WebSocketServerTest.cpp lib/libWebSocketServer.a lib/libJsonRpc.a
 	$(CXX) $(CXXFLAGS) $(INCLUDE_PATH) $(LIB_PATH) $< -o $@ $(LIBS) $(PLATFORM_LIBS)
 
-tests/build/WebSocketServerTlsTest: tests/src/WebSocketServerTlsTest.cpp lib/libWebSocketServer.a lib/libJsonRpc.a
+tests/build/WebSocketServerTlsTest$(EXE_EXT): tests/src/WebSocketServerTlsTest.cpp lib/libWebSocketServer.a lib/libJsonRpc.a
 	$(CXX) $(CXXFLAGS) $(INCLUDE_PATH) $(LIB_PATH) $< -o $@ -lcrypto -lssl $(LIBS) $(PLATFORM_LIBS)
+
+# Client Tests
+client_tests: tests/build/WebSocketClientTest$(EXE_EXT)
+
+tests/build/WebSocketClientTest$(EXE_EXT): tests/src/WebSocketClientTest.cpp lib/libWebSocketClient.a
+	$(CXX) $(CXXFLAGS) $(INCLUDE_PATH) $(LIB_PATH) $< -o $@ $(LIBS) $(PLATFORM_LIBS)
 
 install: install_jsonrpc install_server install_client
 

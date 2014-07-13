@@ -35,8 +35,8 @@ typedef std::map<uint64_t, CallbackPair> CallbackMap;
 typedef std::function<void(const json_spirit::Value&)> EventHandler;
 typedef std::map<std::string, EventHandler> EventHandlerMap;
  
-typedef std::function<void(connection_hdl_t)> OpenHandler;
-typedef std::function<void(connection_hdl_t)> CloseHandler;
+typedef std::function<void()> OpenHandler;
+typedef std::function<void()> CloseHandler;
 typedef std::function<void(const std::string&)> LogHandler;
 typedef std::function<void(const std::string&)> ErrorHandler;
 

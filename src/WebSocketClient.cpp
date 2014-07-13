@@ -97,14 +97,14 @@ void WebSocketClient::onOpen(connection_hdl_t hdl)
 {
     bConnected = true;
     if (on_log) on_log("Connection opened.");
-    if (on_open) on_open(hdl);
+    if (on_open) on_open();
 }
 
 void WebSocketClient::onClose(connection_hdl_t hdl)
 {
     bConnected = false;
     if (on_log) on_log("Connection closed.");
-    if (on_close) on_close(hdl);
+    if (on_close) on_close();
 }
 
 void WebSocketClient::onFail(connection_hdl_t hdl)
