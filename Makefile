@@ -62,23 +62,31 @@ INCLUDE_PATH += \
 LIB_PATH += \
     -Llib
 
-OBJS += \
-    obj/JsonRpc.o
-
 LIBS += \
     -lWebSocketServer \
+    -lWebSocketClient \
+    -lJsonRpc \
     -lboost_system$(BOOST_SUFFIX) \
     -lboost_regex$(BOOST_SUFFIX) \
     -lboost_thread$(BOOST_THREAD_SUFFIX)$(BOOST_SUFFIX)
 
 all: libs tests
 
-libs: server client
+libs: jsonrpc server client
+
+# JSON-RPC
+jsonrpc: lib/libJsonRpc.a
+
+lib/libJsonRpc.a: obj/JsonRpc.o
+	$(ARCHIVER) rcs $@ $^
+
+obj/JsonRpc.o: src/JsonRpc.cpp src/JsonRpc.h
+	$(CXX) $(CXXFLAGS) $(INCLUDE_PATH) -c $< -o $@
 
 # Server
-server: lib/libWebSocketServer.a
+server: jsonrpc lib/libWebSocketServer.a
 
-lib/libWebSocketServer.a: $(OBJS) obj/WebSocketServer.o obj/WebSocketServerTls.o
+lib/libWebSocketServer.a: obj/WebSocketServer.o obj/WebSocketServerTls.o
 	$(ARCHIVER) rcs $@ $^
 
 obj/WebSocketServer.o: src/WebSocketServer.cpp src/WebSocketServer.h
@@ -88,36 +96,44 @@ obj/WebSocketServerTls.o: src/WebSocketServer.cpp src/WebSocketServer.h
 	$(CXX) -DUSE_TLS $(CXXFLAGS) $(INCLUDE_PATH) -c $< -o $@
 
 # Client
-client: lib/libWebSocketClient.a
+client: jsonrpc lib/libWebSocketClient.a
 
-lib/libWebSocketClient.a: $(OBJS) obj/WebSocketClient.o
+lib/libWebSocketClient.a: obj/WebSocketClient.o
 	$(ARCHIVER) rcs $@ $^
 
 obj/WebSocketClient.o: src/WebSocketClient.cpp src/WebSocketClient.h
 	$(CXX) $(CXXFLAGS) $(INCLUDE_PATH) -c $< -o $@
 
-obj/%.o: src/%.cpp src/%.h
-	$(CXX) $(CXXFLAGS) $(INCLUDE_PATH) -c $< -o $@
-
 # Tests
 tests: tests/build/WebSocketServerTest tests/build/WebSocketServerTlsTest
 
-tests/build/WebSocketServerTest: tests/src/WebSocketServerTest.cpp lib/libWebSocketServer.a
+tests/build/WebSocketServerTest: tests/src/WebSocketServerTest.cpp lib/libWebSocketServer.a lib/libJsonRpc.a
 	$(CXX) $(CXXFLAGS) $(INCLUDE_PATH) $(LIB_PATH) $< -o $@ $(LIBS) $(PLATFORM_LIBS)
 
-tests/build/WebSocketServerTlsTest: tests/src/WebSocketServerTlsTest.cpp lib/libWebSocketServer.a
+tests/build/WebSocketServerTlsTest: tests/src/WebSocketServerTlsTest.cpp lib/libWebSocketServer.a lib/libJsonRpc.a
 	$(CXX) $(CXXFLAGS) $(INCLUDE_PATH) $(LIB_PATH) $< -o $@ -lcrypto -lssl $(LIBS) $(PLATFORM_LIBS)
 
-install:
-	-mkdir -p $(SYSROOT)/include/WebSocketServer
-	-rsync -u src/JsonRpc.h $(SYSROOT)/include/WebSocketServer/
-	-rsync -u src/WebSocketServer.h $(SYSROOT)/include/WebSocketServer/
-	-rsync -u src/WebSocketServerTls.h $(SYSROOT)/include/WebSocketServer/
+install: install_jsonrpc install_server install_client
+
+install_jsonrpc:
+	-mkdir -p $(SYSROOT)/include/WebSocketAPI
+	-rsync -u src/JsonRpc.h $(SYSROOT)/include/WebSocketAPI/
+	-mkdir -p $(SYSROOT)/lib
+	-rsync -u lib/libJsonRpc.a $(SYSROOT)/lib/
+
+install_server: install_jsonrpc
+	-rsync -u src/WebSocketServer.h $(SYSROOT)/include/WebSocketAPI/
 	-rsync -u lib/libWebSocketServer.a $(SYSROOT)/lib/
 
+install_client: install_jsonrpc
+	-rsync -u src/WebSocketClient.h $(SYSROOT)/include/WebSocketAPI/
+	-rsync -u lib/libWebSocketClient.a $(SYSROOT)/lib/
+
 remove:
-	-rm -rf $(SYSROOT)/include/WebSocketServer
+	-rm -rf $(SYSROOT)/include/WebSocketAPI
+	-rm $(SYSROOT)/lib/libJsonRpc.a
 	-rm $(SYSROOT)/lib/libWebSocketServer.a
+	-rm $(SYSROOT)/lib/libWebSocketClient.a
 	
 clean:
 	-rm -f obj/*.o lib/*.a tests/build/WebSocketServerTest tests/build/WebSocketServerTlsTest
