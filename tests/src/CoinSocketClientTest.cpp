@@ -11,7 +11,6 @@
 
 using namespace std;
 using namespace json_spirit;
-using namespace WebSocket;
 
 int main(int argc, char** argv)
 {
@@ -20,7 +19,7 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    WebSocketClient socket("event", "data");
+    WebSocket::Client socket("event", "data");
 
     socket.on("statuschanged", [](const Value& data) {
         cout << "statuschanged: " << write_string<Value>(data, true) << endl << endl;

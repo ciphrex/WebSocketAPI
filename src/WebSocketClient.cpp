@@ -16,7 +16,7 @@ using namespace json_spirit;
 using namespace WebSocket;
 
 /// Public Methods
-WebSocketClient::WebSocketClient(const string& event_field, const string& data_field)
+Client::Client(const string& event_field, const string& data_field)
     : result_field("result"), error_field("error"), id_field("id"), bReturnFullResponse(false)
 {
     bConnected = false;
@@ -30,13 +30,13 @@ WebSocketClient::WebSocketClient(const string& event_field, const string& data_f
 
     client.init_asio();
 
-    client.set_open_handler(bind(&WebSocketClient::onOpen, this, ::_1));
-    client.set_close_handler(bind(&WebSocketClient::onClose, this, ::_1));
-    client.set_fail_handler(bind(&WebSocketClient::onFail, this, ::_1));
-    client.set_message_handler(bind(&WebSocketClient::onMessage, this, ::_1, ::_2));
+    client.set_open_handler(bind(&Client::onOpen, this, ::_1));
+    client.set_close_handler(bind(&Client::onClose, this, ::_1));
+    client.set_fail_handler(bind(&Client::onFail, this, ::_1));
+    client.set_message_handler(bind(&Client::onMessage, this, ::_1, ::_2));
 }
 
-WebSocketClient::~WebSocketClient()
+Client::~Client()
 {
     if (bConnected)
     {
@@ -45,7 +45,7 @@ WebSocketClient::~WebSocketClient()
     }
 }
 
-void WebSocketClient::start(const string& serverUrl, OpenHandler on_open, CloseHandler on_close, LogHandler on_log, ErrorHandler on_error)
+void Client::start(const string& serverUrl, OpenHandler on_open, CloseHandler on_close, LogHandler on_log, ErrorHandler on_error)
 {
     if (bConnected) throw runtime_error("Already connected.");
 
@@ -69,7 +69,7 @@ void WebSocketClient::start(const string& serverUrl, OpenHandler on_open, CloseH
     bConnected = false;
 }
 
-void WebSocketClient::stop()
+void Client::stop()
 {
     if (bConnected)
     {
@@ -77,7 +77,7 @@ void WebSocketClient::stop()
     }
 }
 
-void WebSocketClient::send(Object& cmd, ResultCallback resultCallback, ErrorCallback errorCallback)
+void Client::send(Object& cmd, ResultCallback resultCallback, ErrorCallback errorCallback)
 {
     cmd.push_back(Pair(id_field, sequence));
     if (resultCallback || errorCallback)
@@ -90,34 +90,34 @@ void WebSocketClient::send(Object& cmd, ResultCallback resultCallback, ErrorCall
     pConnection->send(cmdStr);
 }
 
-WebSocketClient& WebSocketClient::on(const string& eventType, EventHandler handler)
+Client& Client::on(const string& eventType, EventHandler handler)
 {
     event_handler_map[eventType] = handler;
     return *this;
 }
 
 /// Protected Methods
-void WebSocketClient::onOpen(connection_hdl_t hdl)
+void Client::onOpen(connection_hdl_t hdl)
 {
     bConnected = true;
     if (on_log) on_log("Connection opened.");
     if (on_open) on_open();
 }
 
-void WebSocketClient::onClose(connection_hdl_t hdl)
+void Client::onClose(connection_hdl_t hdl)
 {
     bConnected = false;
     if (on_log) on_log("Connection closed.");
     if (on_close) on_close();
 }
 
-void WebSocketClient::onFail(connection_hdl_t hdl)
+void Client::onFail(connection_hdl_t hdl)
 {
     bConnected = false;
     if (on_error) on_error("Connection failed.");
 }
 
-void WebSocketClient::onMessage(connection_hdl_t hdl, message_ptr_t msg)
+void Client::onMessage(connection_hdl_t hdl, message_ptr_t msg)
 {
     string json = msg->get_payload();
 
@@ -188,7 +188,7 @@ void WebSocketClient::onMessage(connection_hdl_t hdl, message_ptr_t msg)
     }
 }
 
-void WebSocketClient::onResult(const Value& result, uint64_t id)
+void Client::onResult(const Value& result, uint64_t id)
 {
     if (on_log)
     {
@@ -218,7 +218,7 @@ void WebSocketClient::onResult(const Value& result, uint64_t id)
     }
 }
 
-void WebSocketClient::onError(const Value& error, uint64_t id)
+void Client::onError(const Value& error, uint64_t id)
 {
     if (on_log)
     {

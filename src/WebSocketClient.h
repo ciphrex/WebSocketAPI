@@ -40,12 +40,12 @@ typedef std::function<void()> CloseHandler;
 typedef std::function<void(const std::string&)> LogHandler;
 typedef std::function<void(const std::string&)> ErrorHandler;
 
-class WebSocketClient
+class Client
 {
 public:
     // Constructor / Destructor
-    WebSocketClient(const std::string& event_field, const std::string& data_field = "");
-    ~WebSocketClient();
+    Client(const std::string& event_field, const std::string& data_field = "");
+    ~Client();
 
     void setResultField(const std::string& result_field) { this->result_field = result_field; }
     void setErrorField(const std::string& error_field) { this->error_field = error_field; }
@@ -61,7 +61,7 @@ public:
     void send(json_spirit::Object& cmd, ResultCallback resultCallback = nullptr, ErrorCallback errorCallback = nullptr);
 
     // Subscribe to events
-    WebSocketClient& on(const std::string& eventType, EventHandler handler);
+    Client& on(const std::string& eventType, EventHandler handler);
 
 protected:
     // Connection handlers
