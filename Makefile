@@ -20,6 +20,9 @@ ifeq ($(OS), linux)
 
     ARCHIVER = ar
 
+    PLATFORM_LIBS += \
+        -lpthread
+
 else ifeq ($(OS), mingw64)
     CXX =  x86_64-w64-mingw32-g++
     CC =  x86_64-w64-mingw32-gcc
