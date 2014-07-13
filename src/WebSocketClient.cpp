@@ -17,6 +17,7 @@ using namespace WebSocket;
 
 /// Public Methods
 WebSocketClient::WebSocketClient(const string& event_field, const string& data_field)
+    : result_field("result"), error_field("error"), id_field("id"), bReturnFullResponse(false)
 {
     bConnected = false;
     sequence = 0;
@@ -78,7 +79,7 @@ void WebSocketClient::stop()
 
 void WebSocketClient::send(Object& cmd, ResultCallback resultCallback, ErrorCallback errorCallback)
 {
-    cmd.push_back(Pair("id", sequence));
+    cmd.push_back(Pair(id_field, sequence));
     if (resultCallback || errorCallback)
     {
         callback_map[sequence] = CallbackPair(resultCallback, errorCallback);
@@ -132,19 +133,21 @@ void WebSocketClient::onMessage(connection_hdl_t hdl, message_ptr_t msg)
         Value value;
         read_string(json, value);
         const Object& obj = value.get_obj();
-        const Value& id = find_value(obj, "id");
+        const Value& id = find_value(obj, id_field);
 
-        const Value& result = find_value(obj, "result");
+        const Value& result = find_value(obj, result_field);
         if (result.type() != null_type && id.type() == int_type)
         {
-            onResult(result, id.get_uint64());
+            if (bReturnFullResponse)    { onResult(obj, id.get_uint64());    }
+            else                        { onResult(result, id.get_uint64()); }
             return;
         }
 
-        const Value& error = find_value(obj, "error");
+        const Value& error = find_value(obj, error_field);
         if (error.type() != null_type && id.type() == int_type)
         {
-            onError(error, id.get_uint64());
+            if (bReturnFullResponse)    { onError(obj, id.get_uint64());     }
+            else                        { onError(error, id.get_uint64());   }
             return;
         }
 

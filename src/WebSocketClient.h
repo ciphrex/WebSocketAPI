@@ -47,6 +47,12 @@ public:
     WebSocketClient(const std::string& event_field, const std::string& data_field = "");
     ~WebSocketClient();
 
+    void setResultField(const std::string& result_field) { this->result_field = result_field; }
+    void setErrorField(const std::string& error_field) { this->error_field = error_field; }
+    void setIdField(const std::string& id_field) { this->id_field = id_field; }
+
+    void returnFullResponse(bool bReturnFullResponse) { this->bReturnFullResponse = bReturnFullResponse; }
+
     // start() blocks until disconnection occurs.
     void start(const std::string& serverUrl, OpenHandler on_open = nullptr, CloseHandler on_close = nullptr, LogHandler on_log = nullptr, ErrorHandler on_error = nullptr);
     void stop();
@@ -84,6 +90,11 @@ private:
     std::string         data_field;
     EventHandlerMap     event_handler_map;
 
+    std::string         result_field;           // default: "result"
+    std::string         error_field;            // default: "error"
+    std::string         id_field;               // default: "id"
+
+    bool                bReturnFullResponse;    // default: false
     uint64_t            sequence;
     CallbackMap         callback_map;
 };
