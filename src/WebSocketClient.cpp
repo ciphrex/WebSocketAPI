@@ -77,28 +77,30 @@ void Client::stop()
     }
 }
 
-void Client::send(Object& cmd, ResultCallback resultCallback, ErrorCallback errorCallback)
+void Client::send(const Object& cmd, ResultCallback resultCallback, ErrorCallback errorCallback)
 {
-    cmd.push_back(Pair(id_field, sequence));
+    Object seqCmd(cmd);
+    seqCmd.push_back(Pair(id_field, sequence));
     if (resultCallback || errorCallback)
     {
         callback_map[sequence] = CallbackPair(resultCallback, errorCallback);
     }
     sequence++;
-    string cmdStr = write_string<Value>(cmd, false);
+    string cmdStr = write_string<Value>(seqCmd, false);
     if (on_log) on_log(string("Sending command: ") + cmdStr);
     pConnection->send(cmdStr);
 }
 
-void Client::send(JsonRpc::Request& request, ResultCallback resultCallback, ErrorCallback errorCallback)
+void Client::send(const JsonRpc::Request& request, ResultCallback resultCallback, ErrorCallback errorCallback)
 {
-    request.setId((uint64_t)sequence);
+    JsonRpc::Request seqRequest(request);
+    seqRequest.setId((uint64_t)sequence);
     if (resultCallback || errorCallback)
     {
         callback_map[sequence] = CallbackPair(resultCallback, errorCallback);
     }
     sequence++;
-    string cmdStr = request.getJson();
+    string cmdStr = seqRequest.getJson();
     if (on_log) on_log(string("Sending command: ") + cmdStr);
     pConnection->send(cmdStr);
 }

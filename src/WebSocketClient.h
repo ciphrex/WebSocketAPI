@@ -56,8 +56,8 @@ public:
     void stop();
 
     // Send formatted commands
-    void send(json_spirit::Object& cmd, ResultCallback resultCallback = nullptr, ErrorCallback errorCallback = nullptr);
-    void send(JsonRpc::Request& request, ResultCallback resultCallback = nullptr, ErrorCallback errorCallback = nullptr);
+    void send(const json_spirit::Object& cmd, ResultCallback resultCallback = nullptr, ErrorCallback errorCallback = nullptr);
+    void send(const JsonRpc::Request& request, ResultCallback resultCallback = nullptr, ErrorCallback errorCallback = nullptr);
 
     // Subscribe to events
     Client& on(const std::string& eventType, EventHandler handler);
