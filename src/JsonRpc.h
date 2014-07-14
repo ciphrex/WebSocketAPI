@@ -23,16 +23,20 @@ class Request
 {
 public:
     Request() { }
-    Request(const Request& request) : m_method(request.m_method), m_params(request.m_params), m_id(request.m_id) { }
-    Request(const std::string& method, const json_spirit::Array& params, const json_spirit::Value& id = json_spirit::Value())
+    explicit Request(const Request& request) : m_method(request.m_method), m_params(request.m_params), m_id(request.m_id) { }
+    Request(const std::string& method, const json_spirit::Array& params = json_spirit::Array(), const json_spirit::Value& id = json_spirit::Value())
         : m_method(method), m_params(params), m_id(id) { }
-    Request(const std::string& json) { setJson(json); }
 
     void setJson(const std::string& json);
     std::string getJson() const;
 
+    void setMethod(const std::string& method) { m_method = method; }
     const std::string& getMethod() const { return m_method; }
+
+    void setParams(const json_spirit::Array& params) { m_params = params; }
     const json_spirit::Array& getParams() const { return m_params; }
+
+    void setId(const json_spirit::Value& id) { m_id = id; }
     const json_spirit::Value& getId() const { return m_id; }
 
 private:
@@ -46,10 +50,9 @@ class Response
 {
 public:
     Response() { }
-    Response(const Response& response) : m_result(response.m_result), m_error(response.m_error), m_id(response.m_id) { }
+    explicit Response(const Response& response) : m_result(response.m_result), m_error(response.m_error), m_id(response.m_id) { }
     Response(const json_spirit::Value& result, const json_spirit::Value& error, const json_spirit::Value& id)
         : m_result(result), m_error(error), m_id(id) { }
-    Response(const std::string& json) { setJson(json); }
 
     void setJson(const std::string& json);
     std::string getJson() const;

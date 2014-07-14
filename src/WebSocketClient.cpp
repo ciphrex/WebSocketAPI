@@ -90,6 +90,19 @@ void Client::send(Object& cmd, ResultCallback resultCallback, ErrorCallback erro
     pConnection->send(cmdStr);
 }
 
+void Client::send(JsonRpc::Request& request, ResultCallback resultCallback, ErrorCallback errorCallback)
+{
+    request.setId((uint64_t)sequence);
+    if (resultCallback || errorCallback)
+    {
+        callback_map[sequence] = CallbackPair(resultCallback, errorCallback);
+    }
+    sequence++;
+    string cmdStr = request.getJson();
+    if (on_log) on_log(string("Sending command: ") + cmdStr);
+    pConnection->send(cmdStr);
+}
+
 Client& Client::on(const string& eventType, EventHandler handler)
 {
     event_handler_map[eventType] = handler;

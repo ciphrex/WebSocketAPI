@@ -30,17 +30,17 @@ int main(int argc, char** argv)
     });
 
     socket.start(argv[1], [&]() {
-        Object cmd;
-        cmd.push_back(Pair("method", "getvaultinfo"));
-        socket.send(cmd, [](const Value& result) {
+        JsonRpc::Request getvaultinfo("getvaultinfo");
+        socket.send(getvaultinfo, [](const Value& result) {
             cout << "Command result: " << write_string<Value>(result, true) << endl << endl;
         }, [](const Value& error) {
             cout << "Command error: " << write_string<Value>(error, true) << endl << endl; 
         });
 
-        cmd.clear();
-        cmd.push_back(Pair("method", "getchaintip"));
-        socket.send(cmd, [](const Value& result) {
+        Array params;
+        params.push_back(1);
+        JsonRpc::Request gettx("gettx", params); 
+        socket.send(gettx, [](const Value& result) {
             cout << "Command result: " << write_string<Value>(result, true) << endl << endl;
         }, [](const Value& error) {
             cout << "Command error: " << write_string<Value>(error, true) << endl << endl; 

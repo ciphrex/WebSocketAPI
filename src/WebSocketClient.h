@@ -7,12 +7,10 @@
 
 #pragma once
 
+#include "JsonRpc.h"
+
 #include <websocketpp/config/asio_no_tls_client.hpp>
 #include <websocketpp/client.hpp>
-
-#include <json_spirit/json_spirit_reader_template.h>
-#include <json_spirit/json_spirit_writer_template.h>
-#include <json_spirit/json_spirit_utils.h>
 
 #include <iostream>
 #include <sstream>
@@ -57,8 +55,9 @@ public:
     void start(const std::string& serverUrl, OpenHandler on_open = nullptr, CloseHandler on_close = nullptr, LogHandler on_log = nullptr, ErrorHandler on_error = nullptr);
     void stop();
 
-    // Send formatted command
+    // Send formatted commands
     void send(json_spirit::Object& cmd, ResultCallback resultCallback = nullptr, ErrorCallback errorCallback = nullptr);
+    void send(JsonRpc::Request& request, ResultCallback resultCallback = nullptr, ErrorCallback errorCallback = nullptr);
 
     // Subscribe to events
     Client& on(const std::string& eventType, EventHandler handler);
