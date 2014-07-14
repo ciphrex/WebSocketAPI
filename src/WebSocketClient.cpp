@@ -7,6 +7,8 @@
 
 #include "WebSocketClient.h"
 
+//#define REPORT_LOW_LEVEL
+
 using websocketpp::lib::placeholders::_1;
 using websocketpp::lib::placeholders::_2;
 using websocketpp::lib::bind;
@@ -25,8 +27,13 @@ Client::Client(const string& event_field, const string& data_field)
     this->event_field = event_field;
     this->data_field = data_field;
 
+#if defined(REPORT_LOW_LEVEL)
     client.set_access_channels(websocketpp::log::alevel::all);
     client.set_error_channels(websocketpp::log::elevel::all);
+#else
+    client.clear_access_channels(websocketpp::log::alevel::all);
+    client.clear_error_channels(websocketpp::log::elevel::all);
+#endif
 
     client.init_asio();
 
@@ -53,7 +60,9 @@ void Client::start(const string& serverUrl, OpenHandler on_open, CloseHandler on
     pConnection = client.get_connection(serverUrl, error_code);
     if (error_code)
     {
+#if defined(REPORT_LOW_LEVEL)
         client.get_alog().write(websocketpp::log::alevel::app, error_code.message());
+#endif
         throw runtime_error(error_code.message());
     }
 
