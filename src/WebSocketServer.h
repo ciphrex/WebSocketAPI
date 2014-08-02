@@ -69,7 +69,10 @@ public:
     bool isRunning() const { return m_bRunning; }
 
     std::string getRemoteEndpoint(websocketpp::connection_hdl hdl);
+    std::string getRemoteEndpoint(const client_request_t& req) { return getRemoteEndpoint(req.first); }
+
     std::string getResource(websocketpp::connection_hdl hdl);
+    std::string getResource(const client_request_t& req) { return getResource(req.first); }
 
     // Send formatted JSON
     void send(websocketpp::connection_hdl hdl, const JsonRpc::Response& res);
