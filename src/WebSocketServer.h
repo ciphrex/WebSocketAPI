@@ -76,6 +76,7 @@ public:
 
     void addToGroup(const std::string& group, websocketpp::connection_hdl hdl);
     void removeFromGroup(const std::string& group, websocketpp::connection_hdl hdl);
+    void removeFromAllGroups(websocketpp::connection_hdl hdl);
     void removeGroup(const std::string& group);
 
     // Send formatted JSON
