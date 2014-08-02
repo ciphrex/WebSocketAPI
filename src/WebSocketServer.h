@@ -74,20 +74,20 @@ public:
     std::string getResource(websocketpp::connection_hdl hdl);
     std::string getResource(const client_request_t& req) { return getResource(req.first); }
 
-    void addToGroup(const std::string& group, websocketpp::connection_hdl hdl);
-    void removeFromGroup(const std::string& group, websocketpp::connection_hdl hdl);
-    void removeFromAllGroups(websocketpp::connection_hdl hdl);
-    void removeGroup(const std::string& group);
+    void addToChannel(const std::string& channel, websocketpp::connection_hdl hdl);
+    void removeFromChannel(const std::string& channel, websocketpp::connection_hdl hdl);
+    void removeFromAllChannels(websocketpp::connection_hdl hdl);
+    void removeChannel(const std::string& channel);
 
     // Send formatted JSON
     void send(websocketpp::connection_hdl hdl, const JsonRpc::Response& res);
     void sendAll(const JsonRpc::Response& res);
-    void sendGroup(const std::string& group, const JsonRpc::Response& res);
+    void sendChannel(const std::string& channel, const JsonRpc::Response& res);
 
     // Send raw text
     void send(websocketpp::connection_hdl hdl, const std::string& data);
     void sendAll(const std::string& data);
-    void sendGroup(const std::string& group, const std::string& data);
+    void sendChannel(const std::string& channel, const std::string& data);
 
     void setValidateCallback(validate_callback_t callback) { m_validateCallback = callback; }
     void setOpenCallback(open_callback_t callback) { m_openCallback = callback; }
@@ -104,8 +104,8 @@ private:
     typedef std::set<websocketpp::connection_hdl> connection_set_t;
     connection_set_t m_connections;
 
-    typedef std::multimap<std::string, websocketpp::connection_hdl> connection_group_t;
-    connection_group_t m_groups;
+    typedef std::multimap<std::string, websocketpp::connection_hdl> channels_t;
+    channels_t m_channels;
 
     int m_port;
     boost::regex m_allow_ips_regex;
