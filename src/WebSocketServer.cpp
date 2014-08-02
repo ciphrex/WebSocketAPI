@@ -230,6 +230,43 @@ std::string Server::getResource(websocketpp::connection_hdl hdl)
 }
 
 #if defined(USE_TLS)
+void ServerTls::addToGroup(const std::string& group, websocketpp::connection_hdl hdl)
+#else
+void Server::addToGroup(const std::string& group, websocketpp::connection_hdl hdl)
+#endif
+{
+    boost::unique_lock<boost::mutex> lock(m_connectionMutex);
+    if (m_connections.count(hdl)) { m_groups.insert(std::pair<std::string, websocketpp::connection_hdl>(group, hdl)); }
+}
+
+#if defined(USE_TLS)
+void ServerTls::removeFromGroup(const std::string& group, websocketpp::connection_hdl hdl)
+#else
+void Server::removeFromGroup(const std::string& group, websocketpp::connection_hdl hdl)
+#endif
+{
+    std::vector<connection_group_t::iterator> its;
+
+    boost::unique_lock<boost::mutex> lock(m_connectionMutex);
+    auto range = m_groups.equal_range(group);
+    for (connection_group_t::iterator it = range.first; it != range.second; ++it)
+    {
+        if (it->second.owner_before(hdl) && !hdl.owner_before(it->second)) { its.push_back(it); }
+    }
+    for (auto& it: its) { m_groups.erase(it); }
+}
+
+#if defined(USE_TLS)
+void ServerTls::removeGroup(const std::string& group)
+#else
+void Server::removeGroup(const std::string& group)
+#endif
+{
+    boost::unique_lock<boost::mutex> lock(m_connectionMutex);
+    m_groups.erase(group);
+}
+
+#if defined(USE_TLS)
 void ServerTls::send(websocketpp::connection_hdl hdl, const JsonRpc::Response& res)
 #else
 void Server::send(websocketpp::connection_hdl hdl, const JsonRpc::Response& res)
@@ -254,6 +291,23 @@ void Server::sendAll(const JsonRpc::Response& res)
     for (auto& hdl: m_connections)
     {
         m_ws_server.send(hdl, res.getJson(), websocketpp::frame::opcode::text);
+    }
+}
+
+#if defined(USE_TLS)
+void ServerTls::sendGroup(const std::string& group, const JsonRpc::Response& res)
+#else
+void Server::sendGroup(const std::string& group, const JsonRpc::Response& res)
+#endif
+{
+    if (!m_bRunning) return;
+    boost::unique_lock<boost::mutex> lock(m_connectionMutex);
+    if (!m_bRunning) return;
+
+    auto range = m_groups.equal_range(group);
+    for (connection_group_t::iterator it = range.first; it != range.second; ++it)
+    {
+        m_ws_server.send(it->second, res.getJson(), websocketpp::frame::opcode::text);
     }
 }
 
@@ -284,3 +338,21 @@ void Server::sendAll(const std::string& data)
         m_ws_server.send(hdl, data, websocketpp::frame::opcode::text);
     }
 }
+
+#if defined(USE_TLS)
+void ServerTls::sendGroup(const std::string& group, const std::string& data)
+#else
+void Server::sendGroup(const std::string& group, const std::string& data)
+#endif
+{
+    if (!m_bRunning) return;
+    boost::unique_lock<boost::mutex> lock(m_connectionMutex);
+    if (!m_bRunning) return;
+
+    auto range = m_groups.equal_range(group);
+    for (connection_group_t::iterator it = range.first; it != range.second; ++it)
+    {
+        m_ws_server.send(it->second, data, websocketpp::frame::opcode::text);
+    }
+}
+
