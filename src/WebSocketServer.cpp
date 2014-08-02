@@ -76,7 +76,8 @@ void Server::onMessage(websocketpp::connection_hdl hdl, ws_server_t::message_ptr
     std::stringstream err;
 
     try {
-        JsonRpc::Request request(msg->get_payload());
+        JsonRpc::Request request;
+        request.setJson(msg->get_payload());
         boost::unique_lock<boost::mutex> lock(m_requestMutex);
         m_requests.push(std::make_pair(hdl, request));
         lock.unlock();
