@@ -101,8 +101,8 @@ public:
 private:
     ws_server_t m_ws_server;
 
-    typedef std::set<websocketpp::connection_hdl> connection_set_t;
-    connection_set_t m_connections;
+    typedef std::set<websocketpp::connection_hdl> connections_t;
+    connections_t m_connections;
 
     typedef std::multimap<std::string, websocketpp::connection_hdl> channels_t;
     channels_t m_channels;
