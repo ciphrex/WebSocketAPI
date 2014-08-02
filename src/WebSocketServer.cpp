@@ -238,7 +238,7 @@ void Server::addToChannel(const std::string& channel, websocketpp::connection_hd
 #endif
 {
     boost::unique_lock<boost::mutex> lock(m_connectionMutex);
-    if (m_connections.count(hdl)) { m_channels.insert(std::pair<std::string, websocketpp::connection_hdl>(channel, hdl)); }
+    if (m_connections.count(hdl)) { m_channels.insert(std::pair<std::string, websocketpp::connection_hdl>(channel, hdl.lock())); }
 }
 
 #if defined(USE_TLS)
