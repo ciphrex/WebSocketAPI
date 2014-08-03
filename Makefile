@@ -104,10 +104,10 @@ obj/ServerTls.o: src/Server.cpp src/Server.h
 # Client
 client: jsonrpc lib/libWebSocketClient.a
 
-lib/libWebSocketClient.a: obj/WebSocketClient.o
+lib/libWebSocketClient.a: obj/Client.o
 	$(ARCHIVER) rcs $@ $^
 
-obj/WebSocketClient.o: src/WebSocketClient.cpp src/WebSocketClient.h
+obj/Client.o: src/Client.cpp src/Client.h
 	$(CXX) $(CXXFLAGS) $(INCLUDE_PATH) -c $< -o $@
 
 tests: server_tests client_tests
@@ -143,7 +143,7 @@ install_server: install_jsonrpc
 	-rsync -u lib/libWebSocketServer.a $(SYSROOT)/lib/
 
 install_client: install_jsonrpc
-	-rsync -u src/WebSocketClient.h $(SYSROOT)/include/WebSocketAPI/
+	-rsync -u src/Client.h $(SYSROOT)/include/WebSocketAPI/
 	-rsync -u lib/libWebSocketClient.a $(SYSROOT)/lib/
 
 remove:
