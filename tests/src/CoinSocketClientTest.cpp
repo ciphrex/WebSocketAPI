@@ -38,9 +38,9 @@ int main(int argc, char** argv)
         });
 
         Array params;
-        params.push_back(1);
-        JsonRpc::Request gettx("gettx", params); 
-        socket.send(gettx, [](const Value& result) {
+        params.push_back("all");
+        JsonRpc::Request subscribe("subscribe", params); 
+        socket.send(subscribe, [](const Value& result) {
             cout << "Command result: " << write_string<Value>(result, true) << endl << endl;
         }, [](const Value& error) {
             cout << "Command error: " << write_string<Value>(error, true) << endl << endl; 
