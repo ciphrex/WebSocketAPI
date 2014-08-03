@@ -31,37 +31,37 @@ const std::string DEFAULT_ALLOWED_IPS = "^\\[(::1|::ffff:127\\.0\\.0\\.1)\\].*";
 
 #if defined(USE_TLS)
     class ServerTls;
-    typedef ServerTls ServerType;
+    typedef ServerTls Server;
     typedef websocketpp::server<websocketpp::config::asio_tls> ws_server_t;
 #else
-    class Server;
-    typedef Server ServerType;
+    class ServerNoTls;
+    typedef ServerNoTls Server;
     typedef websocketpp::server<websocketpp::config::asio> ws_server_t;
 #endif
 
 #if defined(USE_TLS)
 class ServerTls
 #else
-class Server
+class ServerNoTls
 #endif
 {
 public:
     typedef std::pair<websocketpp::connection_hdl, JsonRpc::Request> client_request_t;
 
-    typedef std::function<bool(ServerType&, websocketpp::connection_hdl)> validate_callback_t;
-    typedef std::function<void(ServerType&, websocketpp::connection_hdl)> open_callback_t;
-    typedef std::function<void(ServerType&, websocketpp::connection_hdl)> close_callback_t;
-    typedef std::function<void(ServerType&, const client_request_t&)> request_callback_t;
+    typedef std::function<bool(Server&, websocketpp::connection_hdl)> validate_callback_t;
+    typedef std::function<void(Server&, websocketpp::connection_hdl)> open_callback_t;
+    typedef std::function<void(Server&, websocketpp::connection_hdl)> close_callback_t;
+    typedef std::function<void(Server&, const client_request_t&)> request_callback_t;
 
 #if defined(USE_TLS)
     typedef websocketpp::lib::shared_ptr<boost::asio::ssl::context> context_ptr;
-    typedef std::function<context_ptr(ServerType&, websocketpp::connection_hdl)> tls_init_callback_t;
+    typedef std::function<context_ptr(Server&, websocketpp::connection_hdl)> tls_init_callback_t;
 
     ServerTls(int port, const std::string& allow_ips = DEFAULT_ALLOWED_IPS) { init(port, allow_ips); }
     ServerTls(const std::string& port, const std::string& allow_ips = DEFAULT_ALLOWED_IPS) { init(strtoul(port.c_str(), NULL, 10), allow_ips); }
 #else
-    Server(int port, const std::string& allow_ips = DEFAULT_ALLOWED_IPS) { init(port, allow_ips); }
-    Server(const std::string& port, const std::string& allow_ips = DEFAULT_ALLOWED_IPS) { init(strtoul(port.c_str(), NULL, 10), allow_ips); }
+    ServerNoTls(int port, const std::string& allow_ips = DEFAULT_ALLOWED_IPS) { init(port, allow_ips); }
+    ServerNoTls(const std::string& port, const std::string& allow_ips = DEFAULT_ALLOWED_IPS) { init(strtoul(port.c_str(), NULL, 10), allow_ips); }
 #endif
 
     void start();
