@@ -144,6 +144,8 @@ private:
     boost::thread m_io_service_thread;
 
     void init(int port, const std::string& allow_ips);
+
+    void do_removeFromAllChannels(websocketpp::connection_hdl hdl);
 };
 
 }

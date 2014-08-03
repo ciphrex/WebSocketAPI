@@ -60,7 +60,7 @@ void ServerNoTls::onClose(websocketpp::connection_hdl hdl)
     LOGGER(trace) << "Server::onClose() called with hdl: " << hdl.lock().get() << endl;
     {
         boost::unique_lock<boost::mutex> lock(m_connectionMutex);
-        removeFromAllChannels(hdl);
+        do_removeFromAllChannels(hdl);
         m_connections.erase(hdl);
     }
     if (m_closeCallback) { m_closeCallback(*this, hdl); }
@@ -268,10 +268,18 @@ void ServerTls::removeFromAllChannels(websocketpp::connection_hdl hdl)
 void ServerNoTls::removeFromAllChannels(websocketpp::connection_hdl hdl)
 #endif
 {
+    boost::unique_lock<boost::mutex> lock(m_connectionMutex);
+    do_removeFromAllChannels(hdl);
+}
+
+#if defined(USE_TLS)
+void ServerTls::do_removeFromAllChannels(websocketpp::connection_hdl hdl)
+#else
+void ServerNoTls::do_removeFromAllChannels(websocketpp::connection_hdl hdl)
+#endif
+{
     // TODO: improve upon this linear search
     std::vector<channels_t::iterator> its;
-
-    boost::unique_lock<boost::mutex> lock(m_connectionMutex);
     for (channels_t::iterator it = m_channels.begin(); it != m_channels.end(); ++it)
     {
         if (it->second.owner_before(hdl) && !hdl.owner_before(it->second)) { its.push_back(it); }
