@@ -1,12 +1,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 //
-// WebSocketServer.cpp
+// Server.cpp
 //
 // Copyright (c) 2013-2014 Eric Lombrozo
 //
 // All Rights Reserved.
 
-#include "WebSocketServer.h"
+#include "Server.h"
 #include "JsonRpc.h"
 
 #include <boost/lexical_cast.hpp>

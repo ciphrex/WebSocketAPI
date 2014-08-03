@@ -92,13 +92,13 @@ obj/JsonRpc.o: src/JsonRpc.cpp src/JsonRpc.h
 # Server
 server: jsonrpc lib/libWebSocketServer.a
 
-lib/libWebSocketServer.a: obj/WebSocketServer.o obj/WebSocketServerTls.o
+lib/libWebSocketServer.a: obj/Server.o obj/ServerTls.o
 	$(ARCHIVER) rcs $@ $^
 
-obj/WebSocketServer.o: src/WebSocketServer.cpp src/WebSocketServer.h
+obj/Server.o: src/Server.cpp src/Server.h
 	$(CXX) $(CXXFLAGS) $(INCLUDE_PATH) -c $< -o $@
 
-obj/WebSocketServerTls.o: src/WebSocketServer.cpp src/WebSocketServer.h
+obj/ServerTls.o: src/Server.cpp src/Server.h
 	$(CXX) -DUSE_TLS $(CXXFLAGS) $(INCLUDE_PATH) -c $< -o $@
 
 # Client
@@ -118,8 +118,8 @@ server_tests: tests/build/WebSocketServerTest$(EXE_EXT) tests/build/WebSocketSer
 tests/build/WebSocketServerTest$(EXE_EXT): tests/src/WebSocketServerTest.cpp lib/libWebSocketServer.a lib/libJsonRpc.a
 	$(CXX) $(CXXFLAGS) $(INCLUDE_PATH) $(LIB_PATH) $< -o $@ $(LIBS) $(PLATFORM_LIBS)
 
-tests/build/WebSocketServerTlsTest$(EXE_EXT): tests/src/WebSocketServerTlsTest.cpp lib/libWebSocketServer.a lib/libJsonRpc.a
-	$(CXX) $(CXXFLAGS) $(INCLUDE_PATH) $(LIB_PATH) $< -o $@ -lcrypto -lssl $(LIBS) $(PLATFORM_LIBS)
+tests/build/WebSocketServerTlsTest$(EXE_EXT): tests/src/WebSocketServerTest.cpp lib/libWebSocketServer.a lib/libJsonRpc.a
+	$(CXX) -DUSE_TLS $(CXXFLAGS) $(INCLUDE_PATH) $(LIB_PATH) $< -o $@ -lcrypto -lssl $(LIBS) $(PLATFORM_LIBS)
 
 # Client Tests
 client_tests: tests/build/CoinSocketClientTest$(EXE_EXT) tests/build/RippleClientTest$(EXE_EXT)
@@ -139,7 +139,7 @@ install_jsonrpc:
 	-rsync -u lib/libJsonRpc.a $(SYSROOT)/lib/
 
 install_server: install_jsonrpc
-	-rsync -u src/WebSocketServer.h $(SYSROOT)/include/WebSocketAPI/
+	-rsync -u src/Server.h $(SYSROOT)/include/WebSocketAPI/
 	-rsync -u lib/libWebSocketServer.a $(SYSROOT)/lib/
 
 install_client: install_jsonrpc
