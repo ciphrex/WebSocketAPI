@@ -9,9 +9,12 @@
 #include "Server.h"
 #include "JsonRpc.h"
 
+#include <logger/logger.h>
+
 #include <boost/lexical_cast.hpp>
 
 using namespace WebSocket;
+using namespace std;
 
 #if defined(USE_TLS)
 bool ServerTls::onValidate(websocketpp::connection_hdl hdl)
@@ -19,17 +22,17 @@ bool ServerTls::onValidate(websocketpp::connection_hdl hdl)
 bool ServerNoTls::onValidate(websocketpp::connection_hdl hdl)
 #endif
 {
-    std::cout << "ServerNoTls::onValidate()" << std::endl;
+    LOGGER(trace) << "Server::onValidate() entered." << endl;
     ws_server_t::connection_ptr con = m_ws_server.get_con_from_hdl(hdl);
     std::string remote_endpoint = boost::lexical_cast<std::string>(con->get_remote_endpoint());
-    std::cout << "Remote endpoint: " << remote_endpoint << std::endl;
+    LOGGER(trace) << "Server::onValidate() - Remote endpoint: " << remote_endpoint << endl;
     if (boost::regex_match(remote_endpoint, m_allow_ips_regex)) {
-        std::cout << "IP validation successful." << std::endl;
+        LOGGER(trace) << "Server::onValidate() - IP validation successful." << endl;
         if (m_validateCallback) { return m_validateCallback(*this, hdl); }
         return true;
     }
     else {
-        std::cout << "IP Validation failed." << std::endl;
+        LOGGER(trace) << "IP Validation failed." << endl;
         return false;
     }
 }
@@ -40,7 +43,7 @@ void ServerTls::onOpen(websocketpp::connection_hdl hdl)
 void ServerNoTls::onOpen(websocketpp::connection_hdl hdl)
 #endif
 {
-    std::cout << "ServerNoTls::onOpen() called with hdl: " << hdl.lock().get() << std::endl;
+    LOGGER(trace) << "Server::onOpen() called with hdl: " << hdl.lock().get() << endl;
     {
         boost::unique_lock<boost::mutex> lock(m_connectionMutex);
         m_connections.insert(hdl);
@@ -54,7 +57,7 @@ void ServerTls::onClose(websocketpp::connection_hdl hdl)
 void ServerNoTls::onClose(websocketpp::connection_hdl hdl)
 #endif
 {
-    std::cout << "ServerNoTls::onClose() called with hdl: " << hdl.lock().get() << std::endl;
+    LOGGER(trace) << "Server::onClose() called with hdl: " << hdl.lock().get() << endl;
     {
         boost::unique_lock<boost::mutex> lock(m_connectionMutex);
         removeFromAllChannels(hdl);
@@ -69,9 +72,9 @@ void ServerTls::onMessage(websocketpp::connection_hdl hdl, ws_server_t::message_
 void ServerNoTls::onMessage(websocketpp::connection_hdl hdl, ws_server_t::message_ptr msg)
 #endif
 {
-    std::cout << "ServerNoTls::onMessage() called with hdl: " << hdl.lock().get()
+    LOGGER(trace) << "ServerNoTls::onMessage() called with hdl: " << hdl.lock().get()
               << " and message: " << msg->get_payload()
-              << std::endl;
+              << endl;
 
     std::stringstream err;
 
@@ -98,7 +101,7 @@ void ServerNoTls::onMessage(websocketpp::connection_hdl hdl, ws_server_t::messag
 #if defined(USE_TLS)
 ServerTls::context_ptr ServerTls::onTlsInit(websocketpp::connection_hdl hdl)
 {
-    std::cout << "ServerTls::onTlsInit() called with hdl: " << hdl.lock().get() << std::endl;
+    LOGGER(trace) << "Server::onTlsInit() called with hdl: " << hdl.lock().get() << endl;
     if (m_tlsInitCallback) { return m_tlsInitCallback(*this, hdl); }
     return context_ptr();
 }
@@ -133,7 +136,7 @@ void ServerNoTls::requestLoop()
             }
         }
         catch (const std::exception& e) {
-            std::cout << "ServerNoTls::requestLoop() - Error: " << e.what() << std::endl;
+            LOGGER(trace) << "Server::requestLoop() - Error: " << e.what() << endl;
         }
     }
 }
@@ -152,7 +155,7 @@ void ServerNoTls::init(int port, const std::string& allow_ips)
         m_allow_ips_regex.assign(allow_ips);
     }
     catch (const boost::regex_error& e) {
-        std::cout << std::endl << "WARNING: Invalid allowips regex. Allowing localhost only." << std::endl;
+        LOGGER(error) <<  "WARNING: Invalid allowips regex. Allowing localhost only." << endl;
         m_allow_ips_regex.assign(DEFAULT_ALLOWED_IPS);
     }
 
@@ -200,15 +203,15 @@ void ServerNoTls::stop()
     m_bRunning = false;
     lock.unlock();
 
-    std::cout << "Websocket server stopping request loop thread..." << std::flush;
+    LOGGER(trace) << "Websocket server stopping request loop thread..." << endl;
     m_requestCond.notify_all();
     m_request_loop_thread.join();
-    std::cout << "Done." << std::endl;
+    LOGGER(trace) << "Done." << endl;
 
-    std::cout << "Websocket server stopping io service thread..." << std::flush;
+    LOGGER(trace) << "Websocket server stopping io service thread..." << endl;
     m_ws_server.stop();
     m_io_service_thread.join();
-    std::cout << "Done." << std::endl;
+    LOGGER(trace) << "Done." << endl;
 }
 
 #if defined(USE_TLS)

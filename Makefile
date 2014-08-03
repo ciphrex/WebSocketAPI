@@ -71,6 +71,7 @@ LIBS += \
     -lWebSocketServer \
     -lWebSocketClient \
     -lJsonRpc \
+    -llogger \
     -lboost_system$(BOOST_SUFFIX) \
     -lboost_regex$(BOOST_SUFFIX) \
     -lboost_random$(BOOST_SUFFIX) \
