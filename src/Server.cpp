@@ -254,10 +254,13 @@ void ServerNoTls::removeFromChannel(const std::string& channel, websocketpp::con
     std::vector<channels_t::iterator> its;
 
     boost::unique_lock<boost::mutex> lock(m_connectionMutex);
+    auto hdl_ = hdl.lock();
+    if (!hdl_) return;
+
     auto range = m_channels.equal_range(channel);
     for (channels_t::iterator it = range.first; it != range.second; ++it)
     {
-        if (it->second.owner_before(hdl) && !hdl.owner_before(it->second)) { its.push_back(it); }
+        if (hdl_ == it->second.lock()) { its.push_back(it); }
     }
     for (auto& it: its) { m_channels.erase(it); }
 }
@@ -280,9 +283,11 @@ void ServerNoTls::do_removeFromAllChannels(websocketpp::connection_hdl hdl)
 {
     // TODO: improve upon this linear search
     std::vector<channels_t::iterator> its;
+    auto hdl_ = hdl.lock();
+    if (!hdl_) return;
     for (channels_t::iterator it = m_channels.begin(); it != m_channels.end(); ++it)
     {
-        if (it->second.owner_before(hdl) && !hdl.owner_before(it->second)) { its.push_back(it); }
+        if (hdl_ == it->second.lock()) { its.push_back(it); }
     }
     for (auto& it: its) { m_channels.erase(it); }
 }
