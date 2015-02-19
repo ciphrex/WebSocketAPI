@@ -18,7 +18,11 @@ using namespace json_spirit;
 using namespace WebSocket;
 
 /// Public Methods
-Client::Client(const string& event_field, const string& data_field)
+#if defined(USE_TLS)
+ClientTls::ClientTls(const string& event_field, const string& data_field)
+#else
+ClientNoTls::ClientNoTls(const string& event_field, const string& data_field)
+#endif
     : result_field("result"), error_field("error"), id_field("id"), bReturnFullResponse(false)
 {
     bConnected = false;
@@ -37,13 +41,21 @@ Client::Client(const string& event_field, const string& data_field)
 
     client.init_asio();
 
+#if defined(USE_TLS)
+    on_tls_init = nullptr;
+    client.set_tls_init_handler(bind(&Client::onTlsInit, this, ::_1));
+#endif
     client.set_open_handler(bind(&Client::onOpen, this, ::_1));
     client.set_close_handler(bind(&Client::onClose, this, ::_1));
     client.set_fail_handler(bind(&Client::onFail, this, ::_1));
     client.set_message_handler(bind(&Client::onMessage, this, ::_1, ::_2));
 }
 
-Client::~Client()
+#if defined(USE_TLS)
+ClientTls::~ClientTls()
+#else
+ClientNoTls::~ClientNoTls()
+#endif
 {
     if (bConnected)
     {
@@ -52,7 +64,11 @@ Client::~Client()
     }
 }
 
-void Client::start(const string& serverUrl, OpenHandler on_open, CloseHandler on_close, LogHandler on_log, ErrorHandler on_error)
+#if defined(USE_TLS)
+void ClientTls::start(const string& serverUrl, OpenHandler on_open, CloseHandler on_close, LogHandler on_log, ErrorHandler on_error)
+#else
+void ClientNoTls::start(const string& serverUrl, OpenHandler on_open, CloseHandler on_close, LogHandler on_log, ErrorHandler on_error)
+#endif
 {
     if (bConnected) throw runtime_error("Already connected.");
 
@@ -78,7 +94,11 @@ void Client::start(const string& serverUrl, OpenHandler on_open, CloseHandler on
     bConnected = false;
 }
 
-void Client::stop()
+#if defined(USE_TLS)
+void ClientTls::stop()
+#else
+void ClientNoTls::stop()
+#endif
 {
     if (bConnected)
     {
@@ -86,7 +106,11 @@ void Client::stop()
     }
 }
 
-void Client::send(const Object& cmd, ResultCallback resultCallback, ErrorCallback errorCallback)
+#if defined(USE_TLS)
+void ClientTls::send(const Object& cmd, ResultCallback resultCallback, ErrorCallback errorCallback)
+#else
+void ClientNoTls::send(const Object& cmd, ResultCallback resultCallback, ErrorCallback errorCallback)
+#endif
 {
     Object seqCmd(cmd);
     seqCmd.push_back(Pair(id_field, sequence));
@@ -100,7 +124,11 @@ void Client::send(const Object& cmd, ResultCallback resultCallback, ErrorCallbac
     pConnection->send(cmdStr);
 }
 
-void Client::send(const JsonRpc::Request& request, ResultCallback resultCallback, ErrorCallback errorCallback)
+#if defined(USE_TLS)
+void ClientTls::send(const JsonRpc::Request& request, ResultCallback resultCallback, ErrorCallback errorCallback)
+#else
+void ClientNoTls::send(const JsonRpc::Request& request, ResultCallback resultCallback, ErrorCallback errorCallback)
+#endif
 {
     JsonRpc::Request seqRequest(request);
     seqRequest.setId((uint64_t)sequence);
@@ -114,28 +142,52 @@ void Client::send(const JsonRpc::Request& request, ResultCallback resultCallback
     pConnection->send(cmdStr);
 }
 
-Client& Client::on(const string& eventType, EventHandler handler)
+#if defined(USE_TLS)
+ClientTls& ClientTls::on(const string& eventType, EventHandler handler)
+#else
+ClientNoTls& ClientNoTls::on(const string& eventType, EventHandler handler)
+#endif
 {
     event_handler_map[eventType] = handler;
     return *this;
 }
 
 /// Protected Methods
-void Client::onOpen(connection_hdl_t hdl)
+#if defined(USE_TLS)
+context_ptr ClientTls::onTlsInit(connection_hdl_t hdl)
+{
+    if (on_tls_init) { return on_tls_init(hdl); }
+    return context_ptr();
+}
+#endif
+
+#if defined(USE_TLS)
+void ClientTls::onOpen(connection_hdl_t hdl)
+#else
+void ClientNoTls::onOpen(connection_hdl_t hdl)
+#endif
 {
     bConnected = true;
     if (on_log) on_log("Connection opened.");
     if (on_open) on_open();
 }
 
-void Client::onClose(connection_hdl_t hdl)
+#if defined(USE_TLS)
+void ClientTls::onClose(connection_hdl_t hdl)
+#else
+void ClientNoTls::onClose(connection_hdl_t hdl)
+#endif
 {
     bConnected = false;
     if (on_log) on_log("Connection closed.");
     if (on_close) on_close();
 }
 
-void Client::onFail(connection_hdl_t hdl)
+#if defined(USE_TLS)
+void ClientTls::onFail(connection_hdl_t hdl)
+#else
+void ClientNoTls::onFail(connection_hdl_t hdl)
+#endif
 {
     bConnected = false;
     if (on_error)
@@ -145,7 +197,11 @@ void Client::onFail(connection_hdl_t hdl)
     }
 }
 
-void Client::onMessage(connection_hdl_t hdl, message_ptr_t msg)
+#if defined(USE_TLS)
+void ClientTls::onMessage(connection_hdl_t hdl, message_ptr_t msg)
+#else
+void ClientNoTls::onMessage(connection_hdl_t hdl, message_ptr_t msg)
+#endif
 {
     string json = msg->get_payload();
 
@@ -216,7 +272,11 @@ void Client::onMessage(connection_hdl_t hdl, message_ptr_t msg)
     }
 }
 
-void Client::onResult(const Value& result, uint64_t id)
+#if defined(USE_TLS)
+void ClientTls::onResult(const Value& result, uint64_t id)
+#else
+void ClientNoTls::onResult(const Value& result, uint64_t id)
+#endif
 {
     if (on_log)
     {
@@ -246,7 +306,11 @@ void Client::onResult(const Value& result, uint64_t id)
     }
 }
 
-void Client::onError(const Value& error, uint64_t id)
+#if defined(USE_TLS)
+void ClientTls::onError(const Value& error, uint64_t id)
+#else
+void ClientNoTls::onError(const Value& error, uint64_t id)
+#endif
 {
     if (on_log)
     {

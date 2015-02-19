@@ -105,11 +105,14 @@ obj/ServerTls.o: src/Server.cpp src/Server.h
 # Client
 client: jsonrpc lib/libWebSocketClient.a
 
-lib/libWebSocketClient.a: obj/Client.o
+lib/libWebSocketClient.a: obj/Client.o obj/ClientTls.o
 	$(ARCHIVER) rcs $@ $^
 
 obj/Client.o: src/Client.cpp src/Client.h
 	$(CXX) $(CXXFLAGS) $(INCLUDE_PATH) -c $< -o $@
+
+obj/ClientTls.o: src/Client.cpp src/Client.h
+	$(CXX) -DUSE_TLS $(CXXFLAGS) $(INCLUDE_PATH) -c $< -o $@
 
 tests: server_tests client_tests
 
@@ -123,10 +126,13 @@ tests/build/WebSocketServerTlsTest$(EXE_EXT): tests/src/WebSocketServerTest.cpp 
 	$(CXX) -DUSE_TLS $(CXXFLAGS) $(INCLUDE_PATH) $(LIB_PATH) $< -o $@ -lcrypto -lssl $(LIBS) $(PLATFORM_LIBS)
 
 # Client Tests
-client_tests: tests/build/CoinSocketClientTest$(EXE_EXT) tests/build/RippleClientTest$(EXE_EXT)
+client_tests: tests/build/CoinSocketClientTest$(EXE_EXT) tests/build/CoinSocketClientTlsTest$(EXE_EXT) tests/build/RippleClientTest$(EXE_EXT)
 
 tests/build/CoinSocketClientTest$(EXE_EXT): tests/src/CoinSocketClientTest.cpp lib/libWebSocketClient.a
-	$(CXX) $(CXXFLAGS) $(INCLUDE_PATH) $(LIB_PATH) $< -o $@ -lcrypto -lssl $(LIBS) $(PLATFORM_LIBS)
+	$(CXX) $(CXXFLAGS) $(INCLUDE_PATH) $(LIB_PATH) $< -o $@ $(LIBS) $(PLATFORM_LIBS)
+
+tests/build/CoinSocketClientTlsTest$(EXE_EXT): tests/src/CoinSocketClientTest.cpp lib/libWebSocketClient.a
+	$(CXX) -DUSE_TLS $(CXXFLAGS) $(INCLUDE_PATH) $(LIB_PATH) $< -o $@ -lcrypto -lssl $(LIBS) $(PLATFORM_LIBS)
 
 tests/build/RippleClientTest$(EXE_EXT): tests/src/RippleClientTest.cpp lib/libWebSocketClient.a
 	$(CXX) $(CXXFLAGS) $(INCLUDE_PATH) $(LIB_PATH) $< -o $@ -lcrypto -lssl $(LIBS) $(PLATFORM_LIBS)
@@ -154,4 +160,4 @@ remove:
 	-rm $(SYSROOT)/lib/libWebSocketClient.a
 	
 clean:
-	-rm -f obj/*.o lib/*.a tests/build/WebSocketServerTest tests/build/WebSocketServerTlsTest
+	-rm -f obj/*.o lib/*.a tests/build/WebSocketServerTest tests/build/WebSocketServerTlsTest tests/build/CoinSocketClientTest tests/build/CoinSocketClientTlsTest tests/build/RippleClientTest

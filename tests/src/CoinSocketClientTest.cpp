@@ -12,6 +12,27 @@
 using namespace std;
 using namespace json_spirit;
 
+#if defined(USE_TLS)
+WebSocket::context_ptr newTlsContext(WebSocket::connection_hdl_t hdl)
+{
+    WebSocket::context_ptr ctx(new boost::asio::ssl::context(boost::asio::ssl::context::tlsv1));
+
+    try
+    {
+        ctx->set_options(boost::asio::ssl::context::default_workarounds |
+                         boost::asio::ssl::context::no_sslv2 |
+                         boost::asio::ssl::context::no_sslv3 |
+                         boost::asio::ssl::context::single_dh_use);
+    }
+    catch (const std::exception& e)
+    {
+        cout << "TLS initialization failed - " << e.what() << endl;
+    }
+
+    return ctx;
+}
+#endif
+
 int main(int argc, char** argv)
 {
     if (argc != 2) {
@@ -22,6 +43,10 @@ int main(int argc, char** argv)
     try
     {
         WebSocket::Client socket("event", "data");
+
+#if defined(USE_TLS)
+        socket.setTlsInitCallback(&newTlsContext);
+#endif
 
         socket.on("statuschanged", [](const Value& data) {
             cout << "statuschanged: " << write_string<Value>(data, true) << endl << endl;

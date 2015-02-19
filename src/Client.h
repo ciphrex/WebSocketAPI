@@ -9,8 +9,12 @@
 
 #include "JsonRpc.h"
 
-//#include <websocketpp/config/asio_no_tls_client.hpp>
-#include <websocketpp/config/asio_client.hpp>
+#if defined(USE_TLS)
+    #include <websocketpp/config/asio_client.hpp>
+#else
+    #include <websocketpp/config/asio_no_tls_client.hpp>
+#endif
+
 #include <websocketpp/client.hpp>
 
 #include <iostream>
@@ -20,11 +24,24 @@
 namespace WebSocket
 {
 
-typedef websocketpp::client<websocketpp::config::asio_client> client_t;
-typedef client_t::connection_ptr                              connection_ptr_t;
-typedef websocketpp::config::asio_client::message_type::ptr   message_ptr_t;
-typedef websocketpp::connection_hdl                           connection_hdl_t;
-typedef websocketpp::lib::error_code                          error_code_t;
+#if defined(USE_TLS)
+    class ClientTls;
+    typedef ClientTls Client;
+    typedef websocketpp::client<websocketpp::config::asio_tls_client>   client_t;
+    typedef websocketpp::config::asio_tls_client::message_type::ptr     message_ptr_t;
+    typedef websocketpp::lib::shared_ptr<boost::asio::ssl::context>     context_ptr;
+
+    typedef std::function<context_ptr(websocketpp::connection_hdl)>     tls_init_callback_t;
+#else
+    class ClientNoTls;
+    typedef ClientNoTls Client;
+    typedef websocketpp::client<websocketpp::config::asio_client>       client_t;
+    typedef websocketpp::config::asio_client::message_type::ptr         message_ptr_t;
+#endif
+
+typedef client_t::connection_ptr                                    connection_ptr_t;
+typedef websocketpp::connection_hdl                                 connection_hdl_t;
+typedef websocketpp::lib::error_code                                error_code_t;
 
 typedef std::function<void(const json_spirit::Value&)> ResultCallback;
 typedef std::function<void(const json_spirit::Value&)> ErrorCallback;
@@ -39,12 +56,21 @@ typedef std::function<void()> CloseHandler;
 typedef std::function<void(const std::string&)> LogHandler;
 typedef std::function<void(const std::string&)> ErrorHandler;
 
-class Client
+#if defined(USE_TLS)
+class ClientTls
+#else
+class ClientNoTls
+#endif
 {
 public:
     // Constructor / Destructor
-    Client(const std::string& event_field, const std::string& data_field = "");
-    ~Client();
+#if defined(USE_TLS)
+    ClientTls(const std::string& event_field, const std::string& data_field = "");
+    ~ClientTls();
+#else
+    ClientNoTls(const std::string& event_field, const std::string& data_field = "");
+    ~ClientNoTls();
+#endif
 
     void setResultField(const std::string& result_field) { this->result_field = result_field; }
     void setErrorField(const std::string& error_field) { this->error_field = error_field; }
@@ -63,12 +89,19 @@ public:
     // Subscribe to events
     Client& on(const std::string& eventType, EventHandler handler);
 
+#if defined(USE_TLS)
+    void setTlsInitCallback(tls_init_callback_t callback) { on_tls_init = callback; }
+#endif
+
 protected:
     // Connection handlers
     void onOpen(connection_hdl_t hdl);
     void onClose(connection_hdl_t hdl);
     void onFail(connection_hdl_t hdl);
     void onMessage(connection_hdl_t, message_ptr_t msg);
+#if defined(USE_TLS)
+    context_ptr onTlsInit(connection_hdl_t hdl);
+#endif
 
     // Results and errors from commands
     void onResult(const json_spirit::Value& result, uint64_t id);
@@ -85,6 +118,10 @@ private:
     CloseHandler        on_close;
     LogHandler          on_log;
     ErrorHandler        on_error;
+
+#if defined(USE_TLS)
+    tls_init_callback_t on_tls_init;
+#endif
 
     std::string         event_field;
     std::string         data_field;
