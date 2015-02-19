@@ -126,10 +126,10 @@ tests/build/WebSocketServerTlsTest$(EXE_EXT): tests/src/WebSocketServerTest.cpp 
 client_tests: tests/build/CoinSocketClientTest$(EXE_EXT) tests/build/RippleClientTest$(EXE_EXT)
 
 tests/build/CoinSocketClientTest$(EXE_EXT): tests/src/CoinSocketClientTest.cpp lib/libWebSocketClient.a
-	$(CXX) $(CXXFLAGS) $(INCLUDE_PATH) $(LIB_PATH) $< -o $@ $(LIBS) $(PLATFORM_LIBS)
+	$(CXX) $(CXXFLAGS) $(INCLUDE_PATH) $(LIB_PATH) $< -o $@ -lcrypto -lssl $(LIBS) $(PLATFORM_LIBS)
 
 tests/build/RippleClientTest$(EXE_EXT): tests/src/RippleClientTest.cpp lib/libWebSocketClient.a
-	$(CXX) $(CXXFLAGS) $(INCLUDE_PATH) $(LIB_PATH) $< -o $@ $(LIBS) $(PLATFORM_LIBS)
+	$(CXX) $(CXXFLAGS) $(INCLUDE_PATH) $(LIB_PATH) $< -o $@ -lcrypto -lssl $(LIBS) $(PLATFORM_LIBS)
 
 install: install_jsonrpc install_server install_client
 

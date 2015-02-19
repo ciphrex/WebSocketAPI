@@ -138,7 +138,11 @@ void Client::onClose(connection_hdl_t hdl)
 void Client::onFail(connection_hdl_t hdl)
 {
     bConnected = false;
-    if (on_error) on_error("Connection failed.");
+    if (on_error)
+    {
+        string error("Connection failed - ");
+        on_error(error + pConnection->get_ec().message());
+    }
 }
 
 void Client::onMessage(connection_hdl_t hdl, message_ptr_t msg)
