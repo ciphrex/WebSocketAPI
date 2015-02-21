@@ -57,11 +57,7 @@ ClientTls::~ClientTls()
 ClientNoTls::~ClientNoTls()
 #endif
 {
-    if (bConnected)
-    {
-        pConnection->close(websocketpp::close::status::going_away, "");
-        bConnected = false;
-    }
+    stop();
 }
 
 #if defined(USE_TLS)
@@ -70,28 +66,36 @@ void ClientTls::start(const string& serverUrl, OpenHandler on_open, CloseHandler
 void ClientNoTls::start(const string& serverUrl, OpenHandler on_open, CloseHandler on_close, LogHandler on_log, ErrorHandler on_error)
 #endif
 {
-    if (bConnected) throw runtime_error("Already connected.");
-
-    error_code_t error_code;
-    pConnection = client.get_connection(serverUrl, error_code);
-    if (error_code)
     {
-#if defined(REPORT_LOW_LEVEL)
-        client.get_alog().write(websocketpp::log::alevel::app, error_code.message());
-#endif
-        throw runtime_error(error_code.message());
+        if (bConnected) throw runtime_error("Already connected.");
+        unique_lock<mutex> lock(connectionMutex);
+        if (bConnected) throw runtime_error("Already connected.");
+
+        error_code_t error_code;
+        pConnection = client.get_connection(serverUrl, error_code);
+        if (error_code)
+        {
+    #if defined(REPORT_LOW_LEVEL)
+            client.get_alog().write(websocketpp::log::alevel::app, error_code.message());
+    #endif
+            throw runtime_error(error_code.message());
+        }
+
+        sequence = 0; 
+        this->on_open = on_open;
+        this->on_close = on_close;
+        this->on_log = on_log;
+        this->on_error = on_error;
+        client.connect(pConnection);
     }
 
-    sequence = 0; 
-    this->on_open = on_open;
-    this->on_close = on_close;
-    this->on_log = on_log;
-    this->on_error = on_error;
-    client.connect(pConnection);
     client.run();
 
-    client.reset();
-    bConnected = false;
+    {
+        unique_lock<mutex> lock(connectionMutex);
+        client.reset();
+        bConnected = false;
+    }
 }
 
 #if defined(USE_TLS)
@@ -100,10 +104,12 @@ void ClientTls::stop()
 void ClientNoTls::stop()
 #endif
 {
-    if (bConnected)
-    {
-        pConnection->close(websocketpp::close::status::going_away, "");
-    }
+    if (!bConnected) return;
+    unique_lock<mutex> lock(connectionMutex);
+    if (!bConnected) return;
+
+    pConnection->close(websocketpp::close::status::going_away, "");
+    bConnected = false;
 }
 
 #if defined(USE_TLS)
@@ -112,6 +118,10 @@ void ClientTls::send(const Object& cmd, ResultCallback resultCallback, ErrorCall
 void ClientNoTls::send(const Object& cmd, ResultCallback resultCallback, ErrorCallback errorCallback)
 #endif
 {
+    if (!bConnected) throw runtime_error("Not connected.");
+    unique_lock<mutex> lock(connectionMutex);
+    if (!bConnected) throw runtime_error("Not connected.");
+
     Object seqCmd(cmd);
     seqCmd.push_back(Pair(id_field, sequence));
     if (resultCallback || errorCallback)
@@ -130,6 +140,10 @@ void ClientTls::send(const JsonRpc::Request& request, ResultCallback resultCallb
 void ClientNoTls::send(const JsonRpc::Request& request, ResultCallback resultCallback, ErrorCallback errorCallback)
 #endif
 {
+    if (!bConnected) throw runtime_error("Not connected.");
+    unique_lock<mutex> lock(connectionMutex);
+    if (!bConnected) throw runtime_error("Not connected.");
+
     JsonRpc::Request seqRequest(request);
     seqRequest.setId((uint64_t)sequence);
     if (resultCallback || errorCallback)
@@ -148,6 +162,7 @@ ClientTls& ClientTls::on(const string& eventType, EventHandler handler)
 ClientNoTls& ClientNoTls::on(const string& eventType, EventHandler handler)
 #endif
 {
+    unique_lock<mutex> lock(handlerMapMutex);
     event_handler_map[eventType] = handler;
     return *this;
 }

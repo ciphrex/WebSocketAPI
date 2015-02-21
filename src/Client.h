@@ -20,6 +20,7 @@
 #include <iostream>
 #include <sstream>
 #include <map>
+#include <mutex>
 
 namespace WebSocket
 {
@@ -113,6 +114,7 @@ private:
     std::string         serverUrl;
     connection_ptr_t    pConnection;
     bool                bConnected;
+    std::mutex          connectionMutex;
 
     OpenHandler         on_open;
     CloseHandler        on_close;
@@ -126,6 +128,7 @@ private:
     std::string         event_field;
     std::string         data_field;
     EventHandlerMap     event_handler_map;
+    std::mutex          handlerMapMutex;
 
     std::string         result_field;           // default: "result"
     std::string         error_field;            // default: "error"
