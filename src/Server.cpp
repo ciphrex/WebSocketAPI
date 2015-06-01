@@ -22,12 +22,12 @@ bool ServerTls::onValidate(websocketpp::connection_hdl hdl)
 bool ServerNoTls::onValidate(websocketpp::connection_hdl hdl)
 #endif
 {
-    LOGGER(trace) << "Server::onValidate() entered." << endl;
+    LOGGER(trace) << SERVER_CLASS_NAME << "::onValidate() entered." << endl;
     ws_server_t::connection_ptr con = m_ws_server.get_con_from_hdl(hdl);
     std::string remote_endpoint = boost::lexical_cast<std::string>(con->get_remote_endpoint());
-    LOGGER(trace) << "Server::onValidate() - Remote endpoint: " << remote_endpoint << endl;
+    LOGGER(trace) << SERVER_CLASS_NAME << "::onValidate() - Remote endpoint: " << remote_endpoint << endl;
     if (boost::regex_match(remote_endpoint, m_allow_ips_regex)) {
-        LOGGER(trace) << "Server::onValidate() - IP validation successful." << endl;
+        LOGGER(trace) << SERVER_CLASS_NAME << "::onValidate() - IP validation successful." << endl;
         if (m_validateCallback) { return m_validateCallback(*this, hdl); }
         return true;
     }
@@ -43,7 +43,7 @@ void ServerTls::onOpen(websocketpp::connection_hdl hdl)
 void ServerNoTls::onOpen(websocketpp::connection_hdl hdl)
 #endif
 {
-    LOGGER(trace) << "Server::onOpen() called with hdl: " << hdl.lock().get() << endl;
+    LOGGER(trace) << SERVER_CLASS_NAME << "::onOpen() called with hdl: " << hdl.lock().get() << endl;
     {
         boost::unique_lock<boost::mutex> lock(m_connectionMutex);
         m_connections.insert(hdl);
@@ -57,7 +57,7 @@ void ServerTls::onClose(websocketpp::connection_hdl hdl)
 void ServerNoTls::onClose(websocketpp::connection_hdl hdl)
 #endif
 {
-    LOGGER(trace) << "Server::onClose() called with hdl: " << hdl.lock().get() << endl;
+    LOGGER(trace) << SERVER_CLASS_NAME << "::onClose() called with hdl: " << hdl.lock().get() << endl;
     {
         boost::unique_lock<boost::mutex> lock(m_connectionMutex);
         do_removeFromAllChannels(hdl);
@@ -67,14 +67,34 @@ void ServerNoTls::onClose(websocketpp::connection_hdl hdl)
 }
 
 #if defined(USE_TLS)
+void ServerTls::onFail(websocketpp::connection_hdl hdl)
+#else
+void ServerNoTls::onFail(websocketpp::connection_hdl hdl)
+#endif
+{
+    ws_server_t::connection_ptr con = m_ws_server.get_con_from_hdl(hdl);
+    string error = con->get_ec().message();
+    LOGGER(trace) << SERVER_CLASS_NAME << "::onFail() called with hdl: " << hdl.lock().get() << " Error: " << error << " Value: " << con->get_ec().value() << endl;
+
+/*
+    {
+        boost::unique_lock<boost::mutex> lock(m_connectionMutex);
+        do_removeFromAllChannels(hdl);
+        m_connections.erase(hdl);
+    }
+    if (m_closeCallback) { m_closeCallback(*this, hdl); }
+*/
+}
+
+#if defined(USE_TLS)
 void ServerTls::onMessage(websocketpp::connection_hdl hdl, ws_server_t::message_ptr msg)
 #else
 void ServerNoTls::onMessage(websocketpp::connection_hdl hdl, ws_server_t::message_ptr msg)
 #endif
 {
-    LOGGER(trace) << "ServerNoTls::onMessage() called with hdl: " << hdl.lock().get()
-              << " and message: " << msg->get_payload()
-              << endl;
+    LOGGER(trace) << SERVER_CLASS_NAME << "::onMessage() called with hdl: " << hdl.lock().get()
+                  << " and message: " << msg->get_payload()
+                  << endl;
 
     std::stringstream err;
 
@@ -89,19 +109,23 @@ void ServerNoTls::onMessage(websocketpp::connection_hdl hdl, ws_server_t::messag
     catch (const stdutils::custom_error& e) {
         JsonRpc::Response response;
         response.setError(e);
-        m_ws_server.send(hdl, response.getJson(), msg->get_opcode());
+        string json(response.getJson());
+        LOGGER(trace) << SERVER_CLASS_NAME << "::onMessage() sending error to hdl " << hdl.lock().get() << ": " << json << endl;
+        m_ws_server.send(hdl, json, msg->get_opcode());
     }
     catch (const std::exception& e) {
         JsonRpc::Response response;
         response.setError(e);
-        m_ws_server.send(hdl, response.getJson(), msg->get_opcode());
+        string json(response.getJson());
+        LOGGER(trace) << SERVER_CLASS_NAME << "::onMessage() sending error to hdl " << hdl.lock().get() << ": " << json << endl;
+        m_ws_server.send(hdl, json, msg->get_opcode());
     }
 }
 
 #if defined(USE_TLS)
 ServerTls::context_ptr ServerTls::onTlsInit(websocketpp::connection_hdl hdl)
 {
-    LOGGER(trace) << "Server::onTlsInit() called with hdl: " << hdl.lock().get() << endl;
+    LOGGER(trace) << SERVER_CLASS_NAME << "::onTlsInit() called with hdl: " << hdl.lock().get() << endl;
     if (m_tlsInitCallback) { return m_tlsInitCallback(*this, hdl); }
     return context_ptr();
 }
@@ -136,7 +160,7 @@ void ServerNoTls::requestLoop()
             }
         }
         catch (const std::exception& e) {
-            LOGGER(trace) << "Server::requestLoop() - Error: " << e.what() << endl;
+            LOGGER(trace) << SERVER_CLASS_NAME << "::requestLoop() - Error: " << e.what() << endl;
         }
     }
 }
@@ -167,6 +191,7 @@ void ServerNoTls::init(int port, const std::string& allow_ips)
     m_ws_server.set_validate_handler(websocketpp::lib::bind(&Server::onValidate, this, websocketpp::lib::placeholders::_1));
     m_ws_server.set_open_handler(websocketpp::lib::bind(&Server::onOpen, this, websocketpp::lib::placeholders::_1));
     m_ws_server.set_close_handler(websocketpp::lib::bind(&Server::onClose, this, websocketpp::lib::placeholders::_1));
+    m_ws_server.set_fail_handler(websocketpp::lib::bind(&Server::onFail, this, websocketpp::lib::placeholders::_1));
     m_ws_server.set_message_handler(websocketpp::lib::bind(&Server::onMessage, this, websocketpp::lib::placeholders::_1, websocketpp::lib::placeholders::_2));
 #if defined(USE_TLS)
     m_ws_server.set_tls_init_handler(websocketpp::lib::bind(&Server::onTlsInit, this, websocketpp::lib::placeholders::_1));
@@ -312,7 +337,9 @@ void ServerNoTls::send(websocketpp::connection_hdl hdl, const JsonRpc::Response&
     boost::unique_lock<boost::mutex> lock(m_connectionMutex);
     if (!m_bRunning) return;
     if (m_connections.count(hdl) == 0) return;
-    m_ws_server.send(hdl, res.getJson(), websocketpp::frame::opcode::text);
+    string json(res.getJson());
+    LOGGER(trace) << SERVER_CLASS_NAME << "::send() sending response to hdl " << hdl.lock().get() << ": " << json << endl;
+    m_ws_server.send(hdl, json, websocketpp::frame::opcode::text);
 }
 
 #if defined(USE_TLS)
@@ -326,7 +353,9 @@ void ServerNoTls::sendAll(const JsonRpc::Response& res)
     if (!m_bRunning) return;
     for (auto& hdl: m_connections)
     {
-        m_ws_server.send(hdl, res.getJson(), websocketpp::frame::opcode::text);
+        string json(res.getJson());
+        LOGGER(trace) << SERVER_CLASS_NAME << "::sendAll() sending response to hdl " << hdl.lock().get() << ": " << json << endl;
+        m_ws_server.send(hdl, json, websocketpp::frame::opcode::text);
     }
 }
 
@@ -340,10 +369,13 @@ void ServerNoTls::sendChannel(const std::string& channel, const JsonRpc::Respons
     boost::unique_lock<boost::mutex> lock(m_connectionMutex);
     if (!m_bRunning) return;
 
+    LOGGER(trace) << SERVER_CLASS_NAME << "::sendChannel() response sending to channel " << channel << endl;
     auto range = m_channels.equal_range(channel);
     for (channels_t::iterator it = range.first; it != range.second; ++it)
     {
-        m_ws_server.send(it->second, res.getJson(), websocketpp::frame::opcode::text);
+        string json(res.getJson());
+        LOGGER(trace) << SERVER_CLASS_NAME << "::send() sending response to hdl " << it->second.lock().get() << ": " << json << endl;
+        m_ws_server.send(it->second, json, websocketpp::frame::opcode::text);
     }
 }
 
@@ -357,6 +389,7 @@ void ServerNoTls::send(websocketpp::connection_hdl hdl, const std::string& data)
     boost::unique_lock<boost::mutex> lock(m_connectionMutex);
     if (!m_bRunning) return;
     if (m_connections.count(hdl) == 0) return;
+    LOGGER(trace) << SERVER_CLASS_NAME << "::send() sending data to hdl " << hdl.lock().get() << ": " << data << endl;
     m_ws_server.send(hdl, data, websocketpp::frame::opcode::text);
 }
 
@@ -371,6 +404,7 @@ void ServerNoTls::sendAll(const std::string& data)
     if (!m_bRunning) return;
     for (auto& hdl: m_connections)
     {
+        LOGGER(trace) << SERVER_CLASS_NAME << "::sendAll() sending data to hdl " << hdl.lock().get() << ": " << data << endl;
         m_ws_server.send(hdl, data, websocketpp::frame::opcode::text);
     }
 }
@@ -385,9 +419,11 @@ void ServerNoTls::sendChannel(const std::string& channel, const std::string& dat
     boost::unique_lock<boost::mutex> lock(m_connectionMutex);
     if (!m_bRunning) return;
 
+    LOGGER(trace) << SERVER_CLASS_NAME << "::sendChannel() sending data to channel " << channel << endl;
     auto range = m_channels.equal_range(channel);
     for (channels_t::iterator it = range.first; it != range.second; ++it)
     {
+        LOGGER(trace) << SERVER_CLASS_NAME << "::sendChannel() sending data to hdl " << it->second.lock().get() << ": " << data << endl;
         m_ws_server.send(it->second, data, websocketpp::frame::opcode::text);
     }
 }

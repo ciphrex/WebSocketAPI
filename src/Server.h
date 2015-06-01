@@ -33,10 +33,12 @@ const std::string DEFAULT_ALLOWED_IPS = "^\\[(::1|::ffff:127\\.0\\.0\\.1)\\].*";
     class ServerTls;
     typedef ServerTls Server;
     typedef websocketpp::server<websocketpp::config::asio_tls> ws_server_t;
+    const std::string SERVER_CLASS_NAME = "ServerTls";
 #else
     class ServerNoTls;
     typedef ServerNoTls Server;
     typedef websocketpp::server<websocketpp::config::asio> ws_server_t;
+    const std::string SERVER_CLASS_NAME = "ServerNoTls";
 #endif
 
 #if defined(USE_TLS)
@@ -51,6 +53,7 @@ public:
     typedef std::function<bool(Server&, websocketpp::connection_hdl)> validate_callback_t;
     typedef std::function<void(Server&, websocketpp::connection_hdl)> open_callback_t;
     typedef std::function<void(Server&, websocketpp::connection_hdl)> close_callback_t;
+    typedef std::function<void(Server&, websocketpp::connection_hdl)> fail_callback_t;
     typedef std::function<void(Server&, const client_request_t&)> request_callback_t;
 
 #if defined(USE_TLS)
@@ -129,6 +132,7 @@ private:
     bool onValidate(websocketpp::connection_hdl hdl);
     void onOpen(websocketpp::connection_hdl hdl);
     void onClose(websocketpp::connection_hdl hdl);
+    void onFail(websocketpp::connection_hdl hdl);
     void onMessage(websocketpp::connection_hdl hdl, ws_server_t::message_ptr msg);
 #if defined(USE_TLS)
     context_ptr onTlsInit(websocketpp::connection_hdl hdl);
